@@ -1,0 +1,6 @@
+<?php
+/**
+ * @file registry_rebuild.module
+ * This isn't really a module but pretends to be one so that the packaging system can deliver it.
+ */
+
