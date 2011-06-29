@@ -8,6 +8,7 @@
 define('DRUPAL_ROOT', realpath(getcwd() . '/../../../..'));
 chdir(DRUPAL_ROOT);
 print "DRUPAL_ROOT is " . DRUPAL_ROOT . ".<br/>\n";
+define('MAINTENANCE_MODE', 'update');
 
 global $_SERVER;
 $_SERVER['REMOTE_ADDR'] = 'nothing';
