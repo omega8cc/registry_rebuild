@@ -1,3 +1,3 @@
 name = Registry Rebuild
-description = Not really a module. Please see README.txt and run registry_rebuild.php
+description = Not really a module. Please see README.txt and run registry_rebuild.php. Visit <a href="http://drupal.org/project/registry_rebuild">the project page</a> for more information.
 core = 7.x

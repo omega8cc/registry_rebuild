@@ -1,6 +1,8 @@
 Registry Rebuild
 ----------------
 
+THIS IS NOT A MODULE. JUST ENABLING IT WILL DO NOTHING. PLEASE READ BELOW.
+
 There are times in Drupal 7 when the registry gets hopelessly hosed and you
 need to rebuild the registry (a list of PHP classes and the files they go with).
 Sometimes, though, you can't do this regular cache-clear activity because some
@@ -23,15 +25,16 @@ When would you *not* need Registry Rebuild?
 If you can access any page, or install a module, or run update.php, you almost
 certainly don't need Registry Rebuild.
 
-How To Use It
--------------
+How To Use It (without drush)
+-----------------------------
 This isn't really a module, but it's just packaged as a module to make it so 
 it's easy to find and people can download it as a package.
 
-1. Download and install as usual in sites/all/modules/registry_rebuild
-2. You don't need to enable it. If you were able to enable it you wouldn't 
+1. Make a backup of your database.
+2. Download and install as usual in sites/all/modules/registry_rebuild
+3. You don't need to enable it. If you were able to enable it you wouldn't 
    need it. See above.
-3. Either run it from the command line:
+4. Either run it from the command line:
    cd sites/all/modules/registry_rebuild
    php registry_rebuild.php
    OR
@@ -52,4 +55,11 @@ This package comes with no guarantee explicit or implicit.
 
 There's no reason it should do any harm to your install. But there can be lots
 of things wrong with a system, and the registry problem is not the fix for
-everything.   
+everything.
+
+How To Use It (with drush)
+--------------------------
+1. Make a backup of your database.
+2. Copy the file registry_rebuild.drush.inc from this package into your
+   ~/.drush folder (or other appropriate folder)
+3. Run "drush rr"
