@@ -52,6 +52,26 @@ function registry_rebuild_rebuild() {
   registry_rebuild();
   $parsed_after = registry_get_parsed_files();
 
+  // Remove files which don't exist anymore.
+  $filenames = array();
+  foreach ($parsed_after as $filename => $file) {
+    if (!file_exists($filename)) {
+      $filenames[] = $filename;
+    }
+  }
+
+  if (!empty($filenames)) {
+    db_delete('registry_file')
+      ->condition('filename', $filenames)
+      ->execute();
+    db_delete('registry')
+      ->condition('filename', $filenames)
+      ->execute();
+    print("Deleted " . count($filenames) . ' stale files from registry manually.');
+  }
+
+  $parsed_after = registry_get_parsed_files();
+
   print "Flushing all caches<br/>\n";
   drupal_flush_all_caches();
 
