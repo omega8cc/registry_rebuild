@@ -49,7 +49,7 @@ function drush_registry_rebuild() {
   cache_clear_all('variables', 'cache_bootstrap');
   cache_clear_all('module_implements', 'cache_bootstrap');
 
-  drush_print("Doing registry_rebuild() in DRUPAL_BOOTSTRAP_SESSION");
+  drush_print("Doing registry_rebuild() in DRUSH_BOOTSTRAP_DRUPAL_DATABASE");
   registry_rebuild();   // At lower level
 
   drush_print("Bootstrapping to DRUPAL_BOOTSTRAP_FULL");
