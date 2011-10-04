@@ -5,6 +5,16 @@
  */
 
 /**
+ * Implements hook_drush_help().
+ */
+function registry_rebuild_drush_help($section) {
+  switch ($section) {
+    case 'drush:registry-rebuild':
+      return dt('Rebuild the registry table in a Drupal install.');
+  }
+}
+
+/**
  * Implements hook_drush_command().
  */
 function registry_rebuild_drush_command() {
@@ -14,6 +24,10 @@ function registry_rebuild_drush_command() {
     'description' => 'Rebuild the registry table (for classes) and the system table (for module locations) in a Drupal install.',
     'callback' => 'drush_registry_rebuild',
     'bootstrap' => DRUSH_BOOTSTRAP_DRUPAL_DATABASE,
+    'core' => array('7+'),
+    'examples' => array(
+      'drush rr -n' => 'Rebuild the registry only, do not clear caches.',
+    ),
     'aliases' => array('rr'),
   );
 
@@ -49,12 +63,14 @@ function drush_registry_rebuild() {
   cache_clear_all('variables', 'cache_bootstrap');
   cache_clear_all('module_implements', 'cache_bootstrap');
 
-  drush_print("Doing registry_rebuild() in DRUSH_BOOTSTRAP_DRUPAL_DATABASE");
+  drush_log(dt('Doing registry_rebuild() in DRUSH_BOOTSTRAP_DRUPAL_DATABASE.'));
   registry_rebuild();   // At lower level
+  drush_log(dt('The registry has been rebuilt.'), 'success');
 
-  drush_print("Bootstrapping to DRUPAL_BOOTSTRAP_FULL");
+  drush_log(dt('Bootstrapping to DRUPAL_BOOTSTRAP_FULL.'));
   drupal_bootstrap(DRUPAL_BOOTSTRAP_FULL);
-  drush_print("Doing registry_rebuild() in DRUPAL_BOOTSTRAP_FULL");
+  drush_log(dt('Drupal is now fully bootstrapped.'), 'success');
+  drush_log(dt('Doing registry_rebuild() in DRUPAL_BOOTSTRAP_FULL.'));
   registry_rebuild();
   $parsed_after = registry_get_parsed_files();
 
@@ -73,14 +89,25 @@ function drush_registry_rebuild() {
     db_delete('registry')
       ->condition('filename', $filenames)
       ->execute();
-    drush_print("Deleted " . count($filenames) . ' stale files from registry manually.');
+
+    $singular = 'Manually deleted 1 stale file from the registry.';
+    $plural   = 'Manually deleted !count stale files from the registry.';
+    drush_log(format_plural(count($filenames), $singular, $plural), 'success');
   }
 
   $parsed_after = registry_get_parsed_files();
 
-  drush_print("Flushing all caches");
-  drupal_flush_all_caches();
+  if (drush_confirm(dt('The Drupal caches need to be cleared. Would you like to do that now?'))) {
+    drush_drupal_cache_clear_all();
+  }
+  else {
+    drush_log(dt('The caches have not been cleared. It is recommended you clear the Drupal caches as soon as possible.'), 'warning');
+  }
 
-  drush_print("There were " . count($parsed_before) . " files in the registry before and " . count($parsed_after) . " files now.");
-  drush_print("If you don't see any crazy fatal errors, your registry has been rebuilt.");
+  $message = 'There were @parsed_before files in the registry before and @parsed_after files now.';
+  $dt_args = array(
+    '@parsed_before' => count($parsed_before),
+    '@parsed_after'  => count($parsed_after),
+  );
+  drush_log(dt($message, $dt_args), 'success');
 }
