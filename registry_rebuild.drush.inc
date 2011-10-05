@@ -25,8 +25,11 @@ function registry_rebuild_drush_command() {
     'callback' => 'drush_registry_rebuild',
     'bootstrap' => DRUSH_BOOTSTRAP_DRUPAL_DATABASE,
     'core' => array('7+'),
+    'options' => array(
+      'no-cache-clear' => 'Rebuild the registry only, do not clear caches.',
+    ),
     'examples' => array(
-      'drush rr -n' => 'Rebuild the registry only, do not clear caches.',
+      'drush rr --no-cache-clear' => 'Rebuild the registry only, do not clear caches.',
     ),
     'aliases' => array('rr'),
   );
@@ -97,7 +100,7 @@ function drush_registry_rebuild() {
 
   $parsed_after = registry_get_parsed_files();
 
-  if (drush_confirm(dt('The Drupal caches need to be cleared. Would you like to do that now?'))) {
+  if (!drush_get_option('no-cache-clear')) {
     drush_drupal_cache_clear_all();
   }
   else {
