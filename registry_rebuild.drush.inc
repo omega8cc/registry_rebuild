@@ -68,16 +68,15 @@ function drush_registry_rebuild() {
 
   drush_log(dt('Doing registry_rebuild() in DRUSH_BOOTSTRAP_DRUPAL_DATABASE.'));
   registry_rebuild();   // At lower level
-  drush_log(dt('The registry has been rebuilt.'), 'success');
+  drush_log(dt('Registry has been rebuilt.'));
 
   drush_log(dt('Bootstrapping to DRUPAL_BOOTSTRAP_FULL.'));
   drupal_bootstrap(DRUPAL_BOOTSTRAP_FULL);
-  drush_log(dt('Drupal is now fully bootstrapped.'), 'success');
   drush_log(dt('Doing registry_rebuild() in DRUPAL_BOOTSTRAP_FULL.'));
   registry_rebuild();
   $parsed_after = registry_get_parsed_files();
 
-   // Remove files which don't exist anymore.
+  // Remove files which don't exist anymore.
   $filenames = array();
   foreach ($parsed_after as $filename => $file) {
     if (!file_exists($filename)) {
@@ -100,17 +99,19 @@ function drush_registry_rebuild() {
 
   $parsed_after = registry_get_parsed_files();
 
+  $message = 'There were @parsed_before files in the registry before and @parsed_after files now.';
+  $dt_args = array(
+    '@parsed_before' => count($parsed_before),
+    '@parsed_after'  => count($parsed_after),
+  );
+  drush_log(dt($message, $dt_args));
+
+  drush_log(dt('The registry has been rebuilt.'), 'success');
+
   if (!drush_get_option('no-cache-clear')) {
     drush_drupal_cache_clear_all();
   }
   else {
     drush_log(dt('The caches have not been cleared. It is recommended you clear the Drupal caches as soon as possible.'), 'warning');
   }
-
-  $message = 'There were @parsed_before files in the registry before and @parsed_after files now.';
-  $dt_args = array(
-    '@parsed_before' => count($parsed_before),
-    '@parsed_after'  => count($parsed_after),
-  );
-  drush_log(dt($message, $dt_args), 'success');
 }
