@@ -93,7 +93,7 @@ function drush_registry_rebuild() {
       ->execute();
 
     $singular = 'Manually deleted 1 stale file from the registry.';
-    $plural   = 'Manually deleted !count stale files from the registry.';
+    $plural   = 'Manually deleted @count stale files from the registry.';
     drush_log(format_plural(count($filenames), $singular, $plural), 'success');
   }
 
