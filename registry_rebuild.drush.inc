@@ -92,9 +92,15 @@ function drush_registry_rebuild() {
       ->condition('filename', $filenames)
       ->execute();
 
+    $dt_args = array(
+      '@files' => implode(', ', $filenames),
+    );
     $singular = 'Manually deleted 1 stale file from the registry.';
     $plural   = 'Manually deleted @count stale files from the registry.';
     drush_log(format_plural(count($filenames), $singular, $plural), 'success');
+    $singular = "A file has been declared in a module's .info, but could not be found. This is probably indicative of a bug. The missing file is @files.";
+    $plural   = "@count files were declared in a module's .info, but could not be found. This is probably indicative of a bug. The missing files are @files.";
+    drush_log(format_plural(count($filenames), $singular, $plural, $dt_args), 'warning');
   }
 
   $parsed_after = registry_get_parsed_files();
