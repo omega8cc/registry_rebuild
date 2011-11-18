@@ -16,25 +16,30 @@ $_SERVER['REMOTE_ADDR'] = 'nothing';
 
 global $include_dir;
 $include_dir = DRUPAL_ROOT . '/includes';
-$modules_dir = DRUPAL_ROOT . '/modules';
+$module_dir = DRUPAL_ROOT . '/modules';
 // Use core directory if it exists.
 if (file_exists(DRUPAL_ROOT . '/core/includes/bootstrap.inc')) {
   $include_dir = DRUPAL_ROOT . '/core/includes';
   $module_dir = DRUPAL_ROOT . '/core/modules';
 }
-require_once $include_dir . '/bootstrap.inc';
-require_once $include_dir . '/common.inc';
-require_once $module_dir . '/entity/entity.module';
-require_once $module_dir . '/entity/entity.controller.inc';
-require_once $module_dir . '/system/system.module';
-require_once $include_dir . '/database/query.inc';
-require_once $include_dir . '/database/select.inc';
 
-if (file_exists($include_dir . '/registry.inc')) {
-  require_once $include_dir . '/registry.inc';
-}
-if (file_exists($include_dir . '/module.inc')) {
-  require_once $include_dir . '/module.inc';
+$includes = array(
+  $include_dir . '/bootstrap.inc',
+  $include_dir . '/common.inc',
+  $module_dir . '/entity/entity.module',
+  $module_dir . '/entity/entity.controller.inc',
+  $module_dir . '/system/system.module',
+  $include_dir . '/database/query.inc',
+  $include_dir . '/database/select.inc',
+  $module_dir . '/entity/entity.module',
+  $include_dir . '/registry.inc',
+  $include_dir . '/module.inc',
+);
+
+foreach ($includes as $include) {
+  if (file_exists($include)) {
+    require_once($include);
+  }
 }
 
 print "Bootstrapping to DRUPAL_BOOTSTRAP_SESSION<br/>\n";
