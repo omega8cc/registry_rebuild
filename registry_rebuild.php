@@ -5,6 +5,7 @@
  * if you need to. It just has to point to the actual root. This assumes
  * that the php file is being run in sites/all/modules/registry_rebuild.
  */
+
 define('DRUPAL_ROOT', define_drupal_root());
 chdir(DRUPAL_ROOT);
 print "DRUPAL_ROOT is " . DRUPAL_ROOT . ".<br/>\n";
@@ -12,13 +13,29 @@ define('MAINTENANCE_MODE', 'update');
 
 global $_SERVER;
 $_SERVER['REMOTE_ADDR'] = 'nothing';
-require_once DRUPAL_ROOT . '/includes/bootstrap.inc';
-require_once DRUPAL_ROOT . '/includes/common.inc';
-require_once DRUPAL_ROOT . '/includes/entity.inc';
-require_once DRUPAL_ROOT . '/modules/system/system.module';
 
-require_once DRUPAL_ROOT . '/includes/database/query.inc';
-require_once DRUPAL_ROOT . '/includes/database/select.inc';
+global $include_dir;
+$include_dir = DRUPAL_ROOT . '/includes';
+$modules_dir = DRUPAL_ROOT . '/modules';
+// Use core directory if it exists.
+if (file_exists(DRUPAL_ROOT . '/core/includes/bootstrap.inc')) {
+  $include_dir = DRUPAL_ROOT . '/core/includes';
+  $module_dir = DRUPAL_ROOT . '/core/modules';
+}
+require_once $include_dir . '/bootstrap.inc';
+require_once $include_dir . '/common.inc';
+require_once $module_dir . '/entity/entity.module';
+require_once $module_dir . '/entity/entity.controller.inc';
+require_once $module_dir . '/system/system.module';
+require_once $include_dir . '/database/query.inc';
+require_once $include_dir . '/database/select.inc';
+
+if (file_exists($include_dir . '/registry.inc')) {
+  require_once $include_dir . '/registry.inc';
+}
+if (file_exists($include_dir . '/module.inc')) {
+  require_once $include_dir . '/module.inc';
+}
 
 print "Bootstrapping to DRUPAL_BOOTSTRAP_SESSION<br/>\n";
 drupal_bootstrap(DRUPAL_BOOTSTRAP_SESSION);
@@ -48,13 +65,12 @@ function define_drupal_root() {
  * Before calling this we need to be bootstrapped to DRUPAL_BOOTSTRAP_DATABASE.
  */
 function registry_rebuild_rebuild() {
-  require_once DRUPAL_ROOT . '/includes/registry.inc';
-
   // This section is not functionally important. It's just getting the
   // registry_parsed_files() so that it can report the change.
   $connection_info = Database::getConnectionInfo();
   $driver = $connection_info['default']['driver'];
-  require_once DRUPAL_ROOT . '/includes/database/' . $driver . '/query.inc';
+  global $include_dir;
+  require_once $include_dir . '/database/' . $driver . '/query.inc';
 
   $parsed_before = registry_get_parsed_files();
 
@@ -63,7 +79,7 @@ function registry_rebuild_rebuild() {
   cache_clear_all('module_implements', 'cache_bootstrap');
 
   print "Doing registry_rebuild() in DRUPAL_BOOTSTRAP_SESSION<br/>\n";
-  registry_rebuild();   // At lower level
+  registry_rebuild(); // At lower level
 
   print "Bootstrapping to DRUPAL_BOOTSTRAP_FULL<br/>\n";
   drupal_bootstrap(DRUPAL_BOOTSTRAP_FULL);

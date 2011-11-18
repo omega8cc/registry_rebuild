@@ -44,21 +44,34 @@ function registry_rebuild_drush_command() {
  */
 function drush_registry_rebuild() {
   define('MAINTENANCE_MODE', 'update');
-  require_once DRUPAL_ROOT . '/includes/registry.inc';
-  require_once DRUPAL_ROOT . '/includes/bootstrap.inc';
-  require_once DRUPAL_ROOT . '/includes/common.inc';
-  require_once DRUPAL_ROOT . '/includes/entity.inc';
-  require_once DRUPAL_ROOT . '/includes/module.inc';
-  require_once DRUPAL_ROOT . '/modules/system/system.module';
 
-  require_once DRUPAL_ROOT . '/includes/database/query.inc';
-  require_once DRUPAL_ROOT . '/includes/database/select.inc';
+  $include_dir = DRUPAL_ROOT . '/includes';
+  $modules_dir = DRUPAL_ROOT . '/modules';
+  // Use core directory if it exists.
+  if (file_exists(DRUPAL_ROOT . '/core/includes/bootstrap.inc')) {
+    $include_dir = DRUPAL_ROOT . '/core/includes';
+    $module_dir = DRUPAL_ROOT . '/core/modules';
+  }
+  require_once $include_dir . '/bootstrap.inc';
+  require_once $include_dir . '/common.inc';
+  require_once $module_dir . '/entity/entity.module';
+  require_once $module_dir . '/entity/entity.controller.inc';
+  require_once $module_dir . '/system/system.module';
+  require_once $include_dir . '/database/query.inc';
+  require_once $include_dir . '/database/select.inc';
+
+  if (file_exists($include_dir . '/registry.inc')) {
+    require_once $include_dir . '/registry.inc';
+  }
+  if (file_exists($include_dir . '/module.inc')) {
+    require_once $include_dir . '/module.inc';
+  }
 
   // This section is not functionally important. It's just getting the
   // registry_parsed_files() so that it can report the change.
   $connection_info = Database::getConnectionInfo();
   $driver = $connection_info['default']['driver'];
-  require_once DRUPAL_ROOT . '/includes/database/' . $driver . '/query.inc';
+  require_once $include_dir . '/database/' . $driver . '/query.inc';
 
   $parsed_before = registry_get_parsed_files();
 
