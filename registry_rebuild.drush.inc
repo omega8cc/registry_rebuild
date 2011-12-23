@@ -10,7 +10,7 @@
 function registry_rebuild_drush_help($section) {
   switch ($section) {
     case 'drush:registry-rebuild':
-      return dt('Rebuild the registry table in a Drupal install.');
+      return dt('Rebuild the registry or module cache in a Drupal install.');
   }
 }
 
@@ -23,8 +23,7 @@ function registry_rebuild_drush_command() {
   $items['registry-rebuild'] = array(
     'description' => 'Rebuild the registry table (for classes) and the system table (for module locations) in a Drupal install.',
     'callback' => 'drush_registry_rebuild',
-    'bootstrap' => DRUSH_BOOTSTRAP_DRUPAL_DATABASE,
-    'core' => array('7+'),
+    'bootstrap' => DRUSH_BOOTSTRAP_DRUSH, // No bootstrap.
     'options' => array(
       'no-cache-clear' => 'Rebuild the registry only, do not clear caches.',
     ),
@@ -44,7 +43,9 @@ function registry_rebuild_drush_command() {
  */
 function drush_registry_rebuild() {
   define('MAINTENANCE_MODE', 'update');
-
+  if (!drush_bootstrap_to_phase(DRUSH_BOOTSTRAP_DRUPAL_DATABASE)) {
+    return drush_set_error('DRUPAL_SITE_NOT_FOUND', dt('You need to specify an alias or run this command within a drupal site.'));
+  }
   $include_dir = DRUPAL_ROOT . '/includes';
   $module_dir = DRUPAL_ROOT . '/modules';
   // Use core directory if it exists.
@@ -64,12 +65,17 @@ function drush_registry_rebuild() {
     $module_dir . '/entity/entity.module',
     $include_dir . '/registry.inc',
     $include_dir . '/module.inc',
+    $include_dir . '/menu.inc',
+    $include_dir . '/file.inc', 
   );
 
   foreach ($includes as $include) {
     if (file_exists($include)) {
       require_once($include);
     }
+  }
+  if (drush_drupal_major_version() < 7) {
+    return drush_module_cache_rebuild();
   }
 
   // This section is not functionally important. It's just getting the
@@ -84,13 +90,17 @@ function drush_registry_rebuild() {
   cache_clear_all('variables', 'cache_bootstrap');
   cache_clear_all('module_implements', 'cache_bootstrap');
 
-  drush_log(dt('Doing registry_rebuild() in DRUSH_BOOTSTRAP_DRUPAL_DATABASE.'));
-  registry_rebuild();   // At lower level
+  registry_rebuild();   // Call Drupal 7+ registry_rebuild()
   drush_log(dt('Registry has been rebuilt.'));
 
   drush_log(dt('Bootstrapping to DRUPAL_BOOTSTRAP_FULL.'));
   drupal_bootstrap(DRUPAL_BOOTSTRAP_FULL);
   drush_log(dt('Doing registry_rebuild() in DRUPAL_BOOTSTRAP_FULL.'));
+
+  if (!drush_get_option('no-cache-clear')) {
+    db_query('TRUNCATE {cache}');
+  }
+
   registry_rebuild();
   $parsed_after = registry_get_parsed_files();
 
@@ -132,6 +142,23 @@ function drush_registry_rebuild() {
 
   drush_log(dt('The registry has been rebuilt.'), 'success');
 
+  if (!drush_get_option('no-cache-clear')) {
+    drush_drupal_cache_clear_all();
+  }
+  else {
+    drush_log(dt('The caches have not been cleared. It is recommended you clear the Drupal caches as soon as possible.'), 'warning');
+  }
+}
+
+/**
+ * Rebuild for D6 (which really just means rebuilding the menu/system table).
+ */
+function drush_module_cache_rebuild() {
+  drush_log(dt('menu_rebuild() in DRUSH_BOOTSTRAP_DRUPAL_DATABASE.'));
+  module_rebuild_cache();
+  drush_log(dt('Module cache has been rebuilt.'));
+  drush_log(dt('Bootstrapping to DRUPAL_BOOTSTRAP_FULL.'));
+  drupal_bootstrap(DRUPAL_BOOTSTRAP_FULL);
   if (!drush_get_option('no-cache-clear')) {
     drush_drupal_cache_clear_all();
   }
