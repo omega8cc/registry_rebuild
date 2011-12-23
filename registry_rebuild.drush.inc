@@ -43,6 +43,7 @@ function registry_rebuild_drush_command() {
  */
 function drush_registry_rebuild() {
   define('MAINTENANCE_MODE', 'update');
+  ini_set('memory_limit', -1);
   if (!drush_bootstrap_to_phase(DRUSH_BOOTSTRAP_DRUPAL_DATABASE)) {
     return drush_set_error('DRUPAL_SITE_NOT_FOUND', dt('You need to specify an alias or run this command within a drupal site.'));
   }

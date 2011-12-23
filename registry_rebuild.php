@@ -6,6 +6,7 @@
  * that the php file is being run in sites/all/modules/registry_rebuild.
  */
 
+ini_set('memory_limit', -1);
 define('DRUPAL_ROOT', define_drupal_root());
 chdir(DRUPAL_ROOT);
 print "DRUPAL_ROOT is " . DRUPAL_ROOT . ".<br/>\n";
@@ -89,6 +90,7 @@ function registry_rebuild_rebuild() {
   print "Bootstrapping to DRUPAL_BOOTSTRAP_FULL<br/>\n";
   drupal_bootstrap(DRUPAL_BOOTSTRAP_FULL);
   print "Doing registry_rebuild() in DRUPAL_BOOTSTRAP_FULL<br/>\n";
+  db_query('TRUNCATE {cache}');
   registry_rebuild();
   $parsed_after = registry_get_parsed_files();
 
