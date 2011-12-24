@@ -156,6 +156,7 @@ function drush_registry_rebuild() {
  */
 function drush_module_cache_rebuild() {
   drush_log(dt('menu_rebuild() in DRUSH_BOOTSTRAP_DRUPAL_DATABASE.'));
+  module_list(TRUE, FALSE);
   module_rebuild_cache();
   drush_log(dt('Module cache has been rebuilt.'));
   drush_log(dt('Bootstrapping to DRUPAL_BOOTSTRAP_FULL.'));
