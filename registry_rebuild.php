@@ -27,6 +27,7 @@ if (file_exists(DRUPAL_ROOT . '/core/includes/bootstrap.inc')) {
 $includes = array(
   $include_dir . '/bootstrap.inc',
   $include_dir . '/common.inc',
+  $include_dir . '/entity.inc',
   $module_dir . '/entity/entity.module',
   $module_dir . '/entity/entity.controller.inc',
   $module_dir . '/system/system.module',
