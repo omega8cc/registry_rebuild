@@ -69,6 +69,7 @@ function drush_registry_rebuild() {
     $include_dir . '/module.inc',
     $include_dir . '/menu.inc',
     $include_dir . '/file.inc', 
+    $include_dir . '/lock.inc',
   );
 
   foreach ($includes as $include) {

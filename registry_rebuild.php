@@ -36,6 +36,7 @@ $includes = array(
   $module_dir . '/entity/entity.module',
   $include_dir . '/registry.inc',
   $include_dir . '/module.inc',
+  $include_dir . '/lock.inc',
 );
 
 foreach ($includes as $include) {
