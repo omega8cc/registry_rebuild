@@ -93,7 +93,7 @@ function registry_rebuild_rebuild() {
   print "Bootstrapping to DRUPAL_BOOTSTRAP_FULL<br/>\n";
   drupal_bootstrap(DRUPAL_BOOTSTRAP_FULL);
   print "Doing registry_rebuild() in DRUPAL_BOOTSTRAP_FULL<br/>\n";
-  db_query('TRUNCATE {cache}');
+  db_truncate('cache');
   registry_rebuild();
   $parsed_after = registry_get_parsed_files();
 

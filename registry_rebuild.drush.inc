@@ -102,7 +102,7 @@ function drush_registry_rebuild() {
   drush_log(dt('Doing registry_rebuild() in DRUPAL_BOOTSTRAP_FULL.'));
 
   if (!drush_get_option('no-cache-clear')) {
-    db_query('TRUNCATE {cache}');
+    db_truncate('cache');
   }
 
   registry_rebuild();
