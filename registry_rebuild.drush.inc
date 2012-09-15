@@ -58,6 +58,9 @@ function drush_registry_rebuild() {
   $includes = array(
     $include_dir . '/bootstrap.inc',
     $include_dir . '/common.inc',
+    $include_dir . '/database.inc',
+    $include_dir . '/schema.inc',
+    $include_dir . '/actions.inc',
     $include_dir . '/entity.inc',
     $module_dir . '/entity/entity.module',
     $module_dir . '/entity/entity.controller.inc',
@@ -84,17 +87,28 @@ function drush_registry_rebuild() {
 
   // This section is not functionally important. It's just getting the
   // registry_parsed_files() so that it can report the change.
-  $connection_info = Database::getConnectionInfo();
-  $driver = $connection_info['default']['driver'];
-  require_once $include_dir . '/database/' . $driver . '/query.inc';
+  if (drush_drupal_major_version() <= 7) {
+    $connection_info = Database::getConnectionInfo();
+    $driver = $connection_info['default']['driver'];
+    require_once $include_dir . '/database/' . $driver . '/query.inc';
+    $parsed_before = registry_get_parsed_files();
+  }
 
-  $parsed_before = registry_get_parsed_files();
+  if (drush_drupal_major_version() <= 7) {
+    cache_clear_all('lookup_cache', 'cache_bootstrap');
+    cache_clear_all('variables', 'cache_bootstrap');
+    cache_clear_all('module_implements', 'cache_bootstrap');
+  }
+  else {
+    cache('bootstrap')->flush();
+  }
 
-  cache_clear_all('lookup_cache', 'cache_bootstrap');
-  cache_clear_all('variables', 'cache_bootstrap');
-  cache_clear_all('module_implements', 'cache_bootstrap');
-
-  registry_rebuild();   // Call Drupal 7+ registry_rebuild()
+  if (drush_drupal_major_version() <= 7) {
+    registry_rebuild();  // Drupal 7 compatible only
+  }
+  else {
+    system_rebuild_module_data();  // Drupal 8 compatible
+  }
   drush_log(dt('Registry has been rebuilt.'));
 
   drush_log(dt('Bootstrapping to DRUPAL_BOOTSTRAP_FULL.'));
@@ -105,49 +119,57 @@ function drush_registry_rebuild() {
     db_truncate('cache');
   }
 
-  registry_rebuild();
-  $parsed_after = registry_get_parsed_files();
+  if (drush_drupal_major_version() <= 7) {
+    registry_rebuild();  // Drupal 7 compatible only
+  }
+  else {
+    system_rebuild_module_data();  // Drupal 8 compatible
+  }
 
-  // Remove files which don't exist anymore.
-  $filenames = array();
-  foreach ($parsed_after as $filename => $file) {
-    if (!file_exists($filename)) {
-      $filenames[] = $filename;
+  if (drush_drupal_major_version() <= 7) {
+    $parsed_after = registry_get_parsed_files();
+    // Remove files which don't exist anymore.
+    $filenames = array();
+    foreach ($parsed_after as $filename => $file) {
+      if (!file_exists($filename)) {
+        $filenames[] = $filename;
+      }
     }
-  }
-
-  if (!empty($filenames)) {
-    db_delete('registry_file')
-      ->condition('filename', $filenames)
-      ->execute();
-    db_delete('registry')
-      ->condition('filename', $filenames)
-      ->execute();
-
+    if (!empty($filenames)) {
+      db_delete('registry_file')
+        ->condition('filename', $filenames)
+        ->execute();
+      db_delete('registry')
+        ->condition('filename', $filenames)
+        ->execute();
+      $dt_args = array(
+        '@files' => implode(', ', $filenames),
+      );
+      $singular = 'Manually deleted 1 stale file from the registry.';
+      $plural   = 'Manually deleted @count stale files from the registry.';
+      drush_log(format_plural(count($filenames), $singular, $plural), 'success');
+      $singular = "A file has been declared in a module's .info, but could not be found. This is probably indicative of a bug. The missing file is @files.";
+      $plural   = "@count files were declared in a module's .info, but could not be found. This is probably indicative of a bug. The missing files are @files.";
+      drush_log(format_plural(count($filenames), $singular, $plural, $dt_args), 'warning');
+    }
+    $parsed_after = registry_get_parsed_files();
+    $message = 'There were @parsed_before files in the registry before and @parsed_after files now.';
     $dt_args = array(
-      '@files' => implode(', ', $filenames),
+      '@parsed_before' => count($parsed_before),
+      '@parsed_after'  => count($parsed_after),
     );
-    $singular = 'Manually deleted 1 stale file from the registry.';
-    $plural   = 'Manually deleted @count stale files from the registry.';
-    drush_log(format_plural(count($filenames), $singular, $plural), 'success');
-    $singular = "A file has been declared in a module's .info, but could not be found. This is probably indicative of a bug. The missing file is @files.";
-    $plural   = "@count files were declared in a module's .info, but could not be found. This is probably indicative of a bug. The missing files are @files.";
-    drush_log(format_plural(count($filenames), $singular, $plural, $dt_args), 'warning');
+    drush_log(dt($message, $dt_args));
   }
-
-  $parsed_after = registry_get_parsed_files();
-
-  $message = 'There were @parsed_before files in the registry before and @parsed_after files now.';
-  $dt_args = array(
-    '@parsed_before' => count($parsed_before),
-    '@parsed_after'  => count($parsed_after),
-  );
-  drush_log(dt($message, $dt_args));
 
   drush_log(dt('The registry has been rebuilt.'), 'success');
 
   if (!drush_get_option('no-cache-clear')) {
-    drush_drupal_cache_clear_all();
+    if (drush_drupal_major_version() <= 7) {
+      drush_drupal_cache_clear_all();
+    }
+    else {
+      drupal_flush_all_caches();
+    }
   }
   else {
     drush_log(dt('The caches have not been cleared. It is recommended you clear the Drupal caches as soon as possible.'), 'warning');
