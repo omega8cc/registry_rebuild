@@ -55,6 +55,28 @@ function drush_registry_rebuild() {
     $module_dir = DRUPAL_ROOT . '/core/modules';
   }
 
+  if (file_exists(DRUPAL_ROOT . '/sites/all/modules/memcache/memcache-lock.inc')) {
+    $cache_lock_path = DRUPAL_ROOT . '/sites/all/modules/memcache/memcache-lock.inc';
+  }
+  elseif (file_exists(DRUPAL_ROOT . '/sites/all/modules/contrib/memcache/memcache-lock.inc')) {
+    $cache_lock_path = DRUPAL_ROOT . '/sites/all/modules/contrib/memcache/memcache-lock.inc';
+  }
+  elseif (file_exists(DRUPAL_ROOT . '/sites/all/modules/redis/redis.lock.d6.inc')) {
+    $cache_lock_path = DRUPAL_ROOT . '/sites/all/modules/redis/redis.lock.d6.inc';
+  }
+  elseif (file_exists(DRUPAL_ROOT . '/sites/all/modules/contrib/redis/redis.lock.d6.inc')) {
+    $cache_lock_path = DRUPAL_ROOT . '/sites/all/modules/contrib/redis/redis.lock.d6.inc';
+  }
+  elseif (file_exists(DRUPAL_ROOT . '/sites/all/modules/redis/redis.lock.inc')) {
+    $cache_lock_path = DRUPAL_ROOT . '/sites/all/modules/redis/redis.lock.inc';
+  }
+  elseif (file_exists(DRUPAL_ROOT . '/sites/all/modules/contrib/redis/redis.lock.inc')) {
+    $cache_lock_path = DRUPAL_ROOT . '/sites/all/modules/contrib/redis/redis.lock.inc';
+  }
+  else {
+    $cache_lock_path = $include_dir . '/lock.inc';
+  }
+
   $includes = array(
     $include_dir . '/bootstrap.inc',
     $include_dir . '/common.inc',
@@ -71,8 +93,8 @@ function drush_registry_rebuild() {
     $include_dir . '/registry.inc',
     $include_dir . '/module.inc',
     $include_dir . '/menu.inc',
-    $include_dir . '/file.inc', 
-    $include_dir . '/lock.inc',
+    $include_dir . '/file.inc',
+    $cache_lock_path,
     $include_dir . '/theme.inc',
   );
 
