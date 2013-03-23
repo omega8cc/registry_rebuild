@@ -201,7 +201,7 @@ function drush_registry_rebuild() {
  * Rebuild for D6 (which really just means rebuilding the menu/system table).
  */
 function drush_module_cache_rebuild() {
-  drush_log(dt('menu_rebuild() in DRUSH_BOOTSTRAP_DRUPAL_DATABASE.'));
+  drush_log(dt('module_rebuild_cache() in DRUSH_BOOTSTRAP_DRUPAL_DATABASE.'));
   module_list(TRUE, FALSE);
   module_rebuild_cache();
   drush_log(dt('Module cache has been rebuilt.'));
