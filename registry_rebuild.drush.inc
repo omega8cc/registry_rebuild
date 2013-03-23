@@ -105,7 +105,8 @@ function drush_registry_rebuild() {
 
   // This section is not functionally important. It's just getting the
   // registry_parsed_files() so that it can report the change.
-  if (drush_drupal_major_version() <= 7) {
+  // Note that it works with Drupal 7 only.
+  if (drush_drupal_major_version() == 7) {
     $connection_info = Database::getConnectionInfo();
     $driver = $connection_info['default']['driver'];
     require_once $include_dir . '/database/' . $driver . '/query.inc';
@@ -117,15 +118,18 @@ function drush_registry_rebuild() {
     cache_clear_all('variables', 'cache_bootstrap');
     cache_clear_all('module_implements', 'cache_bootstrap');
   }
-  else {
+  else { // D8+
     cache('bootstrap')->flush();
   }
 
-  if (drush_drupal_major_version() <= 7) {
+  if (drush_drupal_major_version() == 7) {
     registry_rebuild();  // Drupal 7 compatible only
   }
-  else {
+  elseif (drush_drupal_major_version() > 7) {
     system_rebuild_module_data();  // Drupal 8 compatible
+  }
+  else {
+    return drush_module_cache_rebuild(); // Drupal 5 and 6 compatible
   }
   drush_log(dt('Registry has been rebuilt.'));
 
@@ -137,14 +141,17 @@ function drush_registry_rebuild() {
     db_truncate('cache');
   }
 
-  if (drush_drupal_major_version() <= 7) {
+  if (drush_drupal_major_version() == 7) {
     registry_rebuild();  // Drupal 7 compatible only
   }
-  else {
+  elseif (drush_drupal_major_version() > 7) {
     system_rebuild_module_data();  // Drupal 8 compatible
   }
+  else {
+    return drush_module_cache_rebuild(); // Drupal 5 and 6 compatible
+  }
 
-  if (drush_drupal_major_version() <= 7) {
+  if (drush_drupal_major_version() == 7) {
     $parsed_after = registry_get_parsed_files();
     // Remove files which don't exist anymore.
     $filenames = array();
