@@ -103,12 +103,12 @@ function drush_registry_rebuild() {
     $parsed_before = registry_get_parsed_files();
   }
 
-  if (drush_drupal_major_version() <= 7) {
+  if (drush_drupal_major_version() == 7) {
     cache_clear_all('lookup_cache', 'cache_bootstrap');
     cache_clear_all('variables', 'cache_bootstrap');
     cache_clear_all('module_implements', 'cache_bootstrap');
   }
-  else { // D8+
+  elseif (drush_drupal_major_version() > 7) {
     cache('bootstrap')->flush();
   }
 
