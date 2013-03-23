@@ -55,11 +55,23 @@ function drush_registry_rebuild() {
     $module_dir = DRUPAL_ROOT . '/core/modules';
   }
 
-  if (file_exists(DRUPAL_ROOT . '/modules/o_contrib_seven/redis/redis.lock.inc')) {
-    $cache_lock_path = DRUPAL_ROOT . '/modules/o_contrib_seven/redis/redis.lock.inc';
+  if (file_exists(DRUPAL_ROOT . '/sites/all/modules/memcache/memcache-lock.inc')) {
+    $cache_lock_path = DRUPAL_ROOT . '/sites/all/modules/memcache/memcache-lock.inc';
   }
-  elseif (file_exists(DRUPAL_ROOT . '/modules/o_contrib/redis/redis.lock.d6.inc')) {
-    $cache_lock_path = DRUPAL_ROOT . '/modules/o_contrib/redis/redis.lock.d6.inc';
+  elseif (file_exists(DRUPAL_ROOT . '/sites/all/modules/contrib/memcache/memcache-lock.inc')) {
+    $cache_lock_path = DRUPAL_ROOT . '/sites/all/modules/contrib/memcache/memcache-lock.inc';
+  }
+  elseif (file_exists(DRUPAL_ROOT . '/sites/all/modules/redis/redis.lock.d6.inc')) {
+    $cache_lock_path = DRUPAL_ROOT . '/sites/all/modules/redis/redis.lock.d6.inc';
+  }
+  elseif (file_exists(DRUPAL_ROOT . '/sites/all/modules/contrib/redis/redis.lock.d6.inc')) {
+    $cache_lock_path = DRUPAL_ROOT . '/sites/all/modules/contrib/redis/redis.lock.d6.inc';
+  }
+  elseif (file_exists(DRUPAL_ROOT . '/sites/all/modules/redis/redis.lock.inc')) {
+    $cache_lock_path = DRUPAL_ROOT . '/sites/all/modules/redis/redis.lock.inc';
+  }
+  elseif (file_exists(DRUPAL_ROOT . '/sites/all/modules/contrib/redis/redis.lock.inc')) {
+    $cache_lock_path = DRUPAL_ROOT . '/sites/all/modules/contrib/redis/redis.lock.inc';
   }
   else {
     $cache_lock_path = $include_dir . '/lock.inc';
@@ -77,7 +89,6 @@ function drush_registry_rebuild() {
     $module_dir . '/system/system.module',
     $include_dir . '/database/query.inc',
     $include_dir . '/database/select.inc',
-    $module_dir . '/entity/entity.module',
     $include_dir . '/registry.inc',
     $include_dir . '/module.inc',
     $include_dir . '/menu.inc',
@@ -91,13 +102,11 @@ function drush_registry_rebuild() {
       require_once($include);
     }
   }
-  if (drush_drupal_major_version() < 7) {
-    return drush_module_cache_rebuild();
-  }
 
   // This section is not functionally important. It's just getting the
   // registry_parsed_files() so that it can report the change.
-  if (drush_drupal_major_version() <= 7) {
+  // Note that it works with Drupal 7 only.
+  if (drush_drupal_major_version() == 7) {
     $connection_info = Database::getConnectionInfo();
     $driver = $connection_info['default']['driver'];
     require_once $include_dir . '/database/' . $driver . '/query.inc';
@@ -109,15 +118,18 @@ function drush_registry_rebuild() {
     cache_clear_all('variables', 'cache_bootstrap');
     cache_clear_all('module_implements', 'cache_bootstrap');
   }
-  else {
+  else { // D8+
     cache('bootstrap')->flush();
   }
 
-  if (drush_drupal_major_version() <= 7) {
+  if (drush_drupal_major_version() == 7) {
     registry_rebuild();  // Drupal 7 compatible only
   }
-  else {
+  elseif (drush_drupal_major_version() > 7) {
     system_rebuild_module_data();  // Drupal 8 compatible
+  }
+  else {
+    return drush_module_cache_rebuild(); // Drupal 5 and 6 compatible
   }
   drush_log(dt('Registry has been rebuilt.'));
 
@@ -129,14 +141,17 @@ function drush_registry_rebuild() {
     db_truncate('cache');
   }
 
-  if (drush_drupal_major_version() <= 7) {
+  if (drush_drupal_major_version() == 7) {
     registry_rebuild();  // Drupal 7 compatible only
   }
-  else {
+  elseif (drush_drupal_major_version() > 7) {
     system_rebuild_module_data();  // Drupal 8 compatible
   }
+  else {
+    return drush_module_cache_rebuild(); // Drupal 5 and 6 compatible
+  }
 
-  if (drush_drupal_major_version() <= 7) {
+  if (drush_drupal_major_version() == 7) {
     $parsed_after = registry_get_parsed_files();
     // Remove files which don't exist anymore.
     $filenames = array();
@@ -190,7 +205,7 @@ function drush_registry_rebuild() {
  * Rebuild for D6 (which really just means rebuilding the menu/system table).
  */
 function drush_module_cache_rebuild() {
-  drush_log(dt('menu_rebuild() in DRUSH_BOOTSTRAP_DRUPAL_DATABASE.'));
+  drush_log(dt('module_rebuild_cache() in DRUSH_BOOTSTRAP_DRUPAL_DATABASE.'));
   module_list(TRUE, FALSE);
   module_rebuild_cache();
   drush_log(dt('Module cache has been rebuilt.'));

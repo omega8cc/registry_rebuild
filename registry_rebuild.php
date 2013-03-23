@@ -24,19 +24,45 @@ if (file_exists(DRUPAL_ROOT . '/core/includes/bootstrap.inc')) {
   $module_dir = DRUPAL_ROOT . '/core/modules';
 }
 
+if (file_exists(DRUPAL_ROOT . '/sites/all/modules/memcache/memcache-lock.inc')) {
+  $cache_lock_path = DRUPAL_ROOT . '/sites/all/modules/memcache/memcache-lock.inc';
+}
+elseif (file_exists(DRUPAL_ROOT . '/sites/all/modules/contrib/memcache/memcache-lock.inc')) {
+  $cache_lock_path = DRUPAL_ROOT . '/sites/all/modules/contrib/memcache/memcache-lock.inc';
+}
+elseif (file_exists(DRUPAL_ROOT . '/sites/all/modules/redis/redis.lock.d6.inc')) {
+  $cache_lock_path = DRUPAL_ROOT . '/sites/all/modules/redis/redis.lock.d6.inc';
+}
+elseif (file_exists(DRUPAL_ROOT . '/sites/all/modules/contrib/redis/redis.lock.d6.inc')) {
+  $cache_lock_path = DRUPAL_ROOT . '/sites/all/modules/contrib/redis/redis.lock.d6.inc';
+}
+elseif (file_exists(DRUPAL_ROOT . '/sites/all/modules/redis/redis.lock.inc')) {
+  $cache_lock_path = DRUPAL_ROOT . '/sites/all/modules/redis/redis.lock.inc';
+}
+elseif (file_exists(DRUPAL_ROOT . '/sites/all/modules/contrib/redis/redis.lock.inc')) {
+  $cache_lock_path = DRUPAL_ROOT . '/sites/all/modules/contrib/redis/redis.lock.inc';
+}
+else {
+  $cache_lock_path = $include_dir . '/lock.inc';
+}
+
 $includes = array(
   $include_dir . '/bootstrap.inc',
   $include_dir . '/common.inc',
+  $include_dir . '/database.inc',
+  $include_dir . '/schema.inc',
+  $include_dir . '/actions.inc',
   $include_dir . '/entity.inc',
   $module_dir . '/entity/entity.module',
   $module_dir . '/entity/entity.controller.inc',
   $module_dir . '/system/system.module',
   $include_dir . '/database/query.inc',
   $include_dir . '/database/select.inc',
-  $module_dir . '/entity/entity.module',
   $include_dir . '/registry.inc',
   $include_dir . '/module.inc',
-  $include_dir . '/lock.inc',
+  $include_dir . '/menu.inc',
+  $include_dir . '/file.inc',
+  $cache_lock_path,
   $include_dir . '/theme.inc',
 );
 
@@ -76,50 +102,81 @@ function define_drupal_root() {
 function registry_rebuild_rebuild() {
   // This section is not functionally important. It's just getting the
   // registry_parsed_files() so that it can report the change.
-  $connection_info = Database::getConnectionInfo();
-  $driver = $connection_info['default']['driver'];
-  global $include_dir;
-  require_once $include_dir . '/database/' . $driver . '/query.inc';
+  // Note that it works with Drupal 7 only.
+  if (function_exists('registry_rebuild')) {
+    $connection_info = Database::getConnectionInfo();
+    $driver = $connection_info['default']['driver'];
+    global $include_dir;
+    require_once $include_dir . '/database/' . $driver . '/query.inc';
+    $parsed_before = registry_get_parsed_files();
+  }
 
-  $parsed_before = registry_get_parsed_files();
+  if (function_exists('registry_rebuild') || function_exists('module_rebuild_cache')) { // <= D7
+    cache_clear_all('lookup_cache', 'cache_bootstrap');
+    cache_clear_all('variables', 'cache_bootstrap');
+    cache_clear_all('module_implements', 'cache_bootstrap');
+  }
+  else { // D8+
+    cache('bootstrap')->flush();
+  }
 
-  cache_clear_all('lookup_cache', 'cache_bootstrap');
-  cache_clear_all('variables', 'cache_bootstrap');
-  cache_clear_all('module_implements', 'cache_bootstrap');
-
-  print "Doing registry_rebuild() in DRUPAL_BOOTSTRAP_SESSION<br/>\n";
-  registry_rebuild(); // At lower level
+  if (function_exists('registry_rebuild')) {
+    print "Doing registry_rebuild() in DRUPAL_BOOTSTRAP_SESSION<br/>\n";
+    registry_rebuild();  // Drupal 7 compatible only
+  }
+  elseif (function_exists('module_rebuild_cache')) {
+    print "Doing module_rebuild_cache() in DRUPAL_BOOTSTRAP_SESSION<br/>\n";
+    module_rebuild_cache();  // Drupal 5 and 6 compatible only
+  }
+  else {
+    print "Doing system_rebuild_module_data() in DRUPAL_BOOTSTRAP_SESSION<br/>\n";
+    system_rebuild_module_data();  // Drupal 8 compatible
+  }
 
   print "Bootstrapping to DRUPAL_BOOTSTRAP_FULL<br/>\n";
   drupal_bootstrap(DRUPAL_BOOTSTRAP_FULL);
-  print "Doing registry_rebuild() in DRUPAL_BOOTSTRAP_FULL<br/>\n";
   db_truncate('cache');
-  registry_rebuild();
-  $parsed_after = registry_get_parsed_files();
 
-  // Remove files which don't exist anymore.
-  $filenames = array();
-  foreach ($parsed_after as $filename => $file) {
-    if (!file_exists($filename)) {
-      $filenames[] = $filename;
+  if (function_exists('registry_rebuild')) {
+    print "Doing registry_rebuild() in DRUPAL_BOOTSTRAP_FULL<br/>\n";
+    registry_rebuild();  // Drupal 7 compatible only
+  }
+  elseif (function_exists('module_rebuild_cache')) {
+    print "Doing module_rebuild_cache() in DRUPAL_BOOTSTRAP_FULL<br/>\n";
+    module_rebuild_cache();  // Drupal 5 and 6 compatible only
+  }
+  else {
+    print "Doing system_rebuild_module_data() in DRUPAL_BOOTSTRAP_FULL<br/>\n";
+    system_rebuild_module_data();  // Drupal 8 compatible
+  }
+
+  if (function_exists('registry_rebuild')) { // Drupal 7 compatible only
+    $parsed_after = registry_get_parsed_files();
+    // Remove files which don't exist anymore.
+    $filenames = array();
+    foreach ($parsed_after as $filename => $file) {
+      if (!file_exists($filename)) {
+        $filenames[] = $filename;
+      }
     }
+    if (!empty($filenames)) {
+      db_delete('registry_file')
+        ->condition('filename', $filenames)
+        ->execute();
+      db_delete('registry')
+        ->condition('filename', $filenames)
+        ->execute();
+      print("Deleted " . count($filenames) . ' stale files from registry manually.');
+    }
+    $parsed_after = registry_get_parsed_files();
+    print "Flushing all caches<br/>\n";
+    drupal_flush_all_caches();
+    print "There were " . count($parsed_before) . " files in the registry before and " . count($parsed_after) . " files now.<br/>\n";
+    print "If you don't see any crazy fatal errors, your registry has been rebuilt.<br/>\n";
   }
-
-  if (!empty($filenames)) {
-    db_delete('registry_file')
-      ->condition('filename', $filenames)
-      ->execute();
-    db_delete('registry')
-      ->condition('filename', $filenames)
-      ->execute();
-    print("Deleted " . count($filenames) . ' stale files from registry manually.');
+  else {
+    print "Flushing all caches<br/>\n";
+    drupal_flush_all_caches();
+    print "If you don't see any crazy fatal errors, your registry has been rebuilt.<br/>\n";
   }
-
-  $parsed_after = registry_get_parsed_files();
-
-  print "Flushing all caches<br/>\n";
-  drupal_flush_all_caches();
-
-  print "There were " . count($parsed_before) . " files in the registry before and " . count($parsed_after) . " files now.<br/>\n";
-  print "If you don't see any crazy fatal errors, your registry has been rebuilt.<br/>\n";
 }
