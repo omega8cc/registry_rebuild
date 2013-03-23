@@ -49,6 +49,9 @@ else {
 $includes = array(
   $include_dir . '/bootstrap.inc',
   $include_dir . '/common.inc',
+  $include_dir . '/database.inc',
+  $include_dir . '/schema.inc',
+  $include_dir . '/actions.inc',
   $include_dir . '/entity.inc',
   $module_dir . '/entity/entity.module',
   $module_dir . '/entity/entity.controller.inc',
@@ -58,6 +61,8 @@ $includes = array(
   $module_dir . '/entity/entity.module',
   $include_dir . '/registry.inc',
   $include_dir . '/module.inc',
+  $include_dir . '/menu.inc',
+  $include_dir . '/file.inc',
   $cache_lock_path,
   $include_dir . '/theme.inc',
 );
