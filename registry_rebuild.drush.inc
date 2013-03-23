@@ -26,9 +26,11 @@ function registry_rebuild_drush_command() {
     'bootstrap' => DRUSH_BOOTSTRAP_DRUSH, // No bootstrap.
     'options' => array(
       'no-cache-clear' => 'Rebuild the registry only, do not clear caches.',
+      'fire-bazooka' => 'Truncate registry and registry_file tables to build them from scratch.',
     ),
     'examples' => array(
       'drush rr --no-cache-clear' => 'Rebuild the registry only, do not clear caches.',
+      'drush rr --fire-bazooka' => 'Truncate registry and registry_file tables to build them from scratch.',
     ),
     'aliases' => array('rr'),
   );
@@ -127,6 +129,13 @@ function drush_registry_rebuild() {
 
   if (!drush_get_option('no-cache-clear')) {
     db_truncate('cache');
+    drush_log(dt('cache table truncated in DRUPAL_BOOTSTRAP_FULL.'));
+  }
+  if (drush_get_option('fire-bazooka')) {
+    db_truncate('registry');
+    drush_log(dt('registry table truncated in DRUPAL_BOOTSTRAP_FULL.'));
+    db_truncate('registry_file');
+    drush_log(dt('registry_file table truncated in DRUPAL_BOOTSTRAP_FULL.'));
   }
 
   if (drush_drupal_major_version() == 7) {
