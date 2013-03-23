@@ -102,9 +102,6 @@ function drush_registry_rebuild() {
       require_once($include);
     }
   }
-  if (drush_drupal_major_version() < 7) {
-    return drush_module_cache_rebuild();
-  }
 
   // This section is not functionally important. It's just getting the
   // registry_parsed_files() so that it can report the change.
