@@ -111,12 +111,12 @@ function registry_rebuild_rebuild() {
     $parsed_before = registry_get_parsed_files();
   }
 
-  if (function_exists('registry_rebuild') || function_exists('module_rebuild_cache')) { // <= D7
+  if (function_exists('registry_rebuild')) { // == D7
     cache_clear_all('lookup_cache', 'cache_bootstrap');
     cache_clear_all('variables', 'cache_bootstrap');
     cache_clear_all('module_implements', 'cache_bootstrap');
   }
-  else { // D8+
+  elseif (!function_exists('cache_clear_all')) { // D8+
     cache('bootstrap')->flush();
   }
 
