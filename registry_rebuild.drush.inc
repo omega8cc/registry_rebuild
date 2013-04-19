@@ -121,7 +121,7 @@ function drush_registry_rebuild() {
     cache_clear_all('module_implements', 'cache_bootstrap');
   }
   elseif (drush_drupal_major_version() > 7) {
-    cache('bootstrap')->flush();
+    cache('bootstrap')->deleteAll();
   }
 
   if (drush_drupal_major_version() == 7) {

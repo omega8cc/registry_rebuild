@@ -117,7 +117,7 @@ function registry_rebuild_rebuild() {
     cache_clear_all('module_implements', 'cache_bootstrap');
   }
   elseif (!function_exists('cache_clear_all')) { // D8+
-    cache('bootstrap')->flush();
+    cache('bootstrap')->deleteAll();
   }
 
   if (function_exists('registry_rebuild')) {
