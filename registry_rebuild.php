@@ -24,28 +24,6 @@ if (file_exists(DRUPAL_ROOT . '/core/includes/bootstrap.inc')) {
   $module_dir = DRUPAL_ROOT . '/core/modules';
 }
 
-if (file_exists(DRUPAL_ROOT . '/sites/all/modules/memcache/memcache-lock.inc')) {
-  $cache_lock_path = DRUPAL_ROOT . '/sites/all/modules/memcache/memcache-lock.inc';
-}
-elseif (file_exists(DRUPAL_ROOT . '/sites/all/modules/contrib/memcache/memcache-lock.inc')) {
-  $cache_lock_path = DRUPAL_ROOT . '/sites/all/modules/contrib/memcache/memcache-lock.inc';
-}
-elseif (file_exists(DRUPAL_ROOT . '/sites/all/modules/redis/redis.lock.d6.inc')) {
-  $cache_lock_path = DRUPAL_ROOT . '/sites/all/modules/redis/redis.lock.d6.inc';
-}
-elseif (file_exists(DRUPAL_ROOT . '/sites/all/modules/contrib/redis/redis.lock.d6.inc')) {
-  $cache_lock_path = DRUPAL_ROOT . '/sites/all/modules/contrib/redis/redis.lock.d6.inc';
-}
-elseif (file_exists(DRUPAL_ROOT . '/sites/all/modules/redis/redis.lock.inc')) {
-  $cache_lock_path = DRUPAL_ROOT . '/sites/all/modules/redis/redis.lock.inc';
-}
-elseif (file_exists(DRUPAL_ROOT . '/sites/all/modules/contrib/redis/redis.lock.inc')) {
-  $cache_lock_path = DRUPAL_ROOT . '/sites/all/modules/contrib/redis/redis.lock.inc';
-}
-else {
-  $cache_lock_path = $include_dir . '/lock.inc';
-}
-
 $includes = array(
   $include_dir . '/bootstrap.inc',
   $include_dir . '/common.inc',
@@ -62,9 +40,25 @@ $includes = array(
   $include_dir . '/module.inc',
   $include_dir . '/menu.inc',
   $include_dir . '/file.inc',
-  $cache_lock_path,
   $include_dir . '/theme.inc',
 );
+
+if (function_exists('registry_rebuild')) { // == D7
+  $cache_lock_path = DRUPAL_ROOT . '/'. variable_get('lock_inc', 'includes/lock.inc');
+  // Ensure that the configured lock.inc really exists at that location and
+  // is accessible. Otherwise we use the core lock.inc as fallback.
+  if (!is_readable($cache_lock_path)) {
+    drush_log(dt('Could not load configured variant of lock.inc. Use core implementation as fallback.'), 'warning');
+    $cache_lock_path = DRUPAL_ROOT . '/includes/lock.inc';
+  }
+  $includes[] = $cache_lock_path;
+}
+elseif (!function_exists('cache_clear_all')) { // D8+
+  // TODO
+  // http://api.drupal.org/api/drupal/namespace/Drupal!Core!Lock/8
+}
+// In Drupal 6 the configured lock.inc is already loaded during
+// DRUSH_BOOTSTRAP_DRUPAL_DATABASE
 
 foreach ($includes as $include) {
   if (file_exists($include)) {
