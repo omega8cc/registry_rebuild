@@ -48,7 +48,7 @@ if (function_exists('registry_rebuild')) { // == D7
   // Ensure that the configured lock.inc really exists at that location and
   // is accessible. Otherwise we use the core lock.inc as fallback.
   if (!is_readable($cache_lock_path)) {
-    drush_log(dt('Could not load configured variant of lock.inc. Use core implementation as fallback.'), 'warning');
+    print "Could not load configured variant of lock.inc. Use core implementation as fallback.<br/>\n";
     $cache_lock_path = DRUPAL_ROOT . '/includes/lock.inc';
   }
   $includes[] = $cache_lock_path;
