@@ -119,9 +119,11 @@ function drush_registry_rebuild() {
     cache_clear_all('lookup_cache', 'cache_bootstrap');
     cache_clear_all('variables', 'cache_bootstrap');
     cache_clear_all('module_implements', 'cache_bootstrap');
+    drush_log(dt('Bootstrap caches have been cleared in the pre-DRUPAL_BOOTSTRAP_FULL phase.'));
   }
   elseif (drush_drupal_major_version() > 7) {
     cache('bootstrap')->deleteAll();
+    drush_log(dt('Bootstrap caches have been cleared in the pre-DRUPAL_BOOTSTRAP_FULL phase.'));
   }
 
   if (drush_drupal_major_version() == 7) {
@@ -133,7 +135,8 @@ function drush_registry_rebuild() {
   else {
     return drush_module_cache_rebuild(); // Drupal 5 and 6 compatible
   }
-  drush_log(dt('Registry has been rebuilt.'));
+
+  drush_log(dt('The registry has been rebuilt in the pre-DRUPAL_BOOTSTRAP_FULL phase.'), 'success');
 
   drush_log(dt('Bootstrapping to DRUPAL_BOOTSTRAP_FULL.'));
   drupal_bootstrap(DRUPAL_BOOTSTRAP_FULL);
@@ -141,13 +144,13 @@ function drush_registry_rebuild() {
 
   if (!drush_get_option('no-cache-clear')) {
     db_truncate('cache');
-    drush_log(dt('cache table truncated in DRUPAL_BOOTSTRAP_FULL.'));
+    drush_log(dt('The cache table truncated in DRUPAL_BOOTSTRAP_FULL.'));
   }
   if (drush_get_option('fire-bazooka')) {
     db_truncate('registry');
-    drush_log(dt('registry table truncated in DRUPAL_BOOTSTRAP_FULL.'));
+    drush_log(dt('The registry table truncated in DRUPAL_BOOTSTRAP_FULL.'));
     db_truncate('registry_file');
-    drush_log(dt('registry_file table truncated in DRUPAL_BOOTSTRAP_FULL.'));
+    drush_log(dt('The registry_file table truncated in DRUPAL_BOOTSTRAP_FULL.'));
   }
 
   if (drush_drupal_major_version() == 7) {
@@ -195,14 +198,16 @@ function drush_registry_rebuild() {
     drush_log(dt($message, $dt_args));
   }
 
-  drush_log(dt('The registry has been rebuilt.'), 'success');
+  drush_log(dt('The registry has been rebuilt in DRUPAL_BOOTSTRAP_FULL.'), 'success');
 
   if (!drush_get_option('no-cache-clear')) {
     if (drush_drupal_major_version() <= 7) {
       drush_drupal_cache_clear_all();
+      drush_log(dt('All caches have been cleared with drush_drupal_cache_clear_all.'));
     }
     else {
       drupal_flush_all_caches();
+      drush_log(dt('All caches have been cleared with drupal_flush_all_caches.'));
     }
   }
   else {
@@ -222,6 +227,7 @@ function drush_module_cache_rebuild() {
   drupal_bootstrap(DRUPAL_BOOTSTRAP_FULL);
   if (!drush_get_option('no-cache-clear')) {
     drush_drupal_cache_clear_all();
+    drush_log(dt('All caches have been cleared with drush_drupal_cache_clear_all.'));
   }
   else {
     drush_log(dt('The caches have not been cleared. It is recommended you clear the Drupal caches as soon as possible.'), 'warning');
