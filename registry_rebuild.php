@@ -91,7 +91,7 @@ function define_drupal_root() {
 }
 
 /**
- * Before calling this we need to be bootstrapped to DRUPAL_BOOTSTRAP_DATABASE.
+ * Before calling this we need to be bootstrapped to DRUPAL_BOOTSTRAP_SESSION.
  */
 function registry_rebuild_rebuild() {
   // This section is not functionally important. It's just getting the
@@ -109,9 +109,11 @@ function registry_rebuild_rebuild() {
     cache_clear_all('lookup_cache', 'cache_bootstrap');
     cache_clear_all('variables', 'cache_bootstrap');
     cache_clear_all('module_implements', 'cache_bootstrap');
+    print "Bootstrap caches have been cleared in DRUPAL_BOOTSTRAP_SESSION<br/>\n";
   }
   elseif (!function_exists('cache_clear_all')) { // D8+
     cache('bootstrap')->deleteAll();
+    print "Bootstrap caches have been cleared in DRUPAL_BOOTSTRAP_SESSION<br/>\n";
   }
 
   if (function_exists('registry_rebuild')) {
