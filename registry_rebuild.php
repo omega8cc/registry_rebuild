@@ -44,14 +44,20 @@ $includes = array(
 );
 
 if (function_exists('registry_rebuild')) { // == D7
-  $cache_lock_path = DRUPAL_ROOT . '/'. variable_get('lock_inc', 'includes/lock.inc');
+  $cache_lock_path_relative = DRUPAL_ROOT . '/'. variable_get('lock_inc');
+  $cache_lock_path_absolute = variable_get('lock_inc');
   // Ensure that the configured lock.inc really exists at that location and
   // is accessible. Otherwise we use the core lock.inc as fallback.
-  if (!is_readable($cache_lock_path)) {
-    print "Could not load configured variant of lock.inc. Use core implementation as fallback.<br/>\n";
-    $cache_lock_path = DRUPAL_ROOT . '/includes/lock.inc';
+  if (is_readable($cache_lock_path_relative)) {
+    $includes[] = $cache_lock_path_relative;
   }
-  $includes[] = $cache_lock_path;
+  elseif (is_readable($cache_lock_path_absolute)) {
+    $includes[] = $cache_lock_path_absolute;
+  }
+  else {
+    print "Could not load configured variant of lock.inc. Use core implementation as fallback.<br/>\n";
+    $includes[] = DRUPAL_ROOT . '/includes/lock.inc';
+  }
 }
 elseif (!function_exists('cache_clear_all')) { // D8+
   // TODO
