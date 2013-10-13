@@ -77,18 +77,25 @@ function drush_registry_rebuild() {
   );
 
   if (drush_drupal_major_version() == 7) {
-    $cache_lock_path_relative = DRUPAL_ROOT . '/'. variable_get('lock_inc');
     $cache_lock_path_absolute = variable_get('lock_inc');
-    // Ensure that the configured lock.inc really exists at that location and
-    // is accessible. Otherwise we use the core lock.inc as fallback.
-    if (is_readable($cache_lock_path_relative) && is_file($cache_lock_path_relative)) {
-      $includes[] = $cache_lock_path_relative;
-    }
-    elseif (is_readable($cache_lock_path_absolute) && is_file($cache_lock_path_absolute)) {
-      $includes[] = $cache_lock_path_absolute;
+    if (!empty($cache_lock_path_absolute)) {
+      $cache_lock_path_relative = DRUPAL_ROOT . '/'. variable_get('lock_inc');
+      // Ensure that the configured lock.inc really exists at that location and
+      // is accessible. Otherwise we use the core lock.inc as fallback.
+      if (is_readable($cache_lock_path_relative) && is_file($cache_lock_path_relative)) {
+        $includes[] = $cache_lock_path_relative;
+        drush_log(dt("We will use relative variant of lock.inc: %lock", array('%lock' => $cache_lock_path_relative)));
+      }
+      elseif (is_readable($cache_lock_path_absolute) && is_file($cache_lock_path_absolute)) {
+        $includes[] = $cache_lock_path_absolute;
+        drush_log(dt("We will use absolute variant of lock.inc: %lock", array('%lock' => $cache_lock_path_absolute)));
+      }
+      else {
+        drush_log(dt('We will use core implementation of lock.inc as fallback.'));
+        $includes[] = DRUPAL_ROOT . '/includes/lock.inc';
+      }
     }
     else {
-      drush_log(dt('Could not load configured variant of lock.inc. Use core implementation as fallback.'), 'warning');
       $includes[] = DRUPAL_ROOT . '/includes/lock.inc';
     }
   }
