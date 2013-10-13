@@ -81,10 +81,10 @@ function drush_registry_rebuild() {
     $cache_lock_path_absolute = variable_get('lock_inc');
     // Ensure that the configured lock.inc really exists at that location and
     // is accessible. Otherwise we use the core lock.inc as fallback.
-    if (is_readable($cache_lock_path_relative)) {
+    if (is_readable($cache_lock_path_relative) && is_file($cache_lock_path_relative)) {
       $includes[] = $cache_lock_path_relative;
     }
-    elseif (is_readable($cache_lock_path_absolute)) {
+    elseif (is_readable($cache_lock_path_absolute) && is_file($cache_lock_path_absolute)) {
       $includes[] = $cache_lock_path_absolute;
     }
     else {
