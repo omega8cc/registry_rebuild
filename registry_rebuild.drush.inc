@@ -201,6 +201,7 @@ function drush_registry_rebuild() {
   drush_log(dt('The registry has been rebuilt in DRUPAL_BOOTSTRAP_FULL.'), 'success');
 
   if (!drush_get_option('no-cache-clear')) {
+    db_truncate('cache_form');
     if (drush_drupal_major_version() <= 7) {
       drush_drupal_cache_clear_all();
       drush_log(dt('All caches have been cleared with drush_drupal_cache_clear_all.'));
@@ -226,6 +227,7 @@ function drush_module_cache_rebuild() {
   drush_log(dt('Bootstrapping to DRUPAL_BOOTSTRAP_FULL.'));
   drupal_bootstrap(DRUPAL_BOOTSTRAP_FULL);
   if (!drush_get_option('no-cache-clear')) {
+    db_truncate('cache_form');
     drush_drupal_cache_clear_all();
     drush_log(dt('All caches have been cleared with drush_drupal_cache_clear_all.'));
   }
