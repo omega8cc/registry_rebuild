@@ -150,13 +150,23 @@ function drush_registry_rebuild() {
   drush_log(dt('Doing registry_rebuild() in DRUPAL_BOOTSTRAP_FULL.'));
 
   if (!drush_get_option('no-cache-clear')) {
-    db_truncate('cache');
+    if (drush_drupal_major_version() >= 7) {
+      db_truncate('cache')->execute();
+    }
+    else {
+      cache_clear_all('*', 'cache', TRUE);
+    }
     drush_log(dt('The cache table truncated in DRUPAL_BOOTSTRAP_FULL.'));
   }
-  if (drush_get_option('fire-bazooka')) {
-    db_truncate('registry');
+
+  if (drush_get_option('fire-bazooka') && drush_drupal_major_version() == 7) {
+    drupal_flush_all_caches();
+    drush_log(dt('All caches have been cleared with drupal_flush_all_caches.'));
+    db_truncate('cache_form')->execute();
+    drush_log(dt('The cache_form table truncated in DRUPAL_BOOTSTRAP_FULL.'));
+    db_truncate('registry')->execute();
     drush_log(dt('The registry table truncated in DRUPAL_BOOTSTRAP_FULL.'));
-    db_truncate('registry_file');
+    db_truncate('registry_file')->execute();
     drush_log(dt('The registry_file table truncated in DRUPAL_BOOTSTRAP_FULL.'));
   }
 
