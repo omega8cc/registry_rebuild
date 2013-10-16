@@ -100,9 +100,8 @@ function define_drupal_root() {
  * Before calling this we need to be bootstrapped to DRUPAL_BOOTSTRAP_SESSION.
  */
 function registry_rebuild_rebuild() {
-  // This section is not functionally important. It's just getting the
-  // registry_parsed_files() so that it can report the change.
-  // Note that it works with Drupal 7 only.
+  // This section is not functionally important. It's just using the
+  // registry_get_parsed_files() so that it can report the change. Drupal 7 only.
   if (function_exists('registry_rebuild')) {
     $connection_info = Database::getConnectionInfo();
     $driver = $connection_info['default']['driver'];
@@ -111,7 +110,9 @@ function registry_rebuild_rebuild() {
     $parsed_before = registry_get_parsed_files();
   }
 
-  if (function_exists('registry_rebuild')) { // == D7
+  // Separate bootstrap cache exists only in Drupal 7 or newer.
+  // They are cleared later again via drupal_flush_all_caches().
+  if (function_exists('registry_rebuild')) { // D7
     cache_clear_all('lookup_cache', 'cache_bootstrap');
     cache_clear_all('variables', 'cache_bootstrap');
     cache_clear_all('module_implements', 'cache_bootstrap');
@@ -139,6 +140,7 @@ function registry_rebuild_rebuild() {
   drupal_bootstrap(DRUPAL_BOOTSTRAP_FULL);
   db_truncate('cache');
 
+  // Extra cleanup available for D7 only.
   if (function_exists('registry_rebuild')) {
     print "Doing registry_rebuild() in DRUPAL_BOOTSTRAP_FULL<br/>\n";
     registry_rebuild();  // Drupal 7 compatible only

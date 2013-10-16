@@ -25,12 +25,12 @@ function registry_rebuild_drush_command() {
     'callback' => 'drush_registry_rebuild',
     'bootstrap' => DRUSH_BOOTSTRAP_DRUSH, // No bootstrap.
     'options' => array(
-      'no-cache-clear' => 'Rebuild the registry only, do not clear caches.',
-      'fire-bazooka' => 'Truncate registry and registry_file tables to build them from scratch.',
+      'no-cache-clear' => 'Rebuild the registry only, do not clear caches, unless --fire-bazooka is also used.',
+      'fire-bazooka' => 'Truncate registry and registry_file tables and build them from scratch. Forces all caches clear.',
     ),
     'examples' => array(
-      'drush rr --no-cache-clear' => 'Rebuild the registry only, do not clear caches.',
-      'drush rr --fire-bazooka' => 'Truncate registry and registry_file tables to build them from scratch.',
+      'drush rr --no-cache-clear' => 'Rebuild the registry only, do not clear caches, unless --fire-bazooka is also used.',
+      'drush rr --fire-bazooka' => 'Truncate registry and registry_file tables and build them from scratch. Forces all caches clear.',
     ),
     'aliases' => array('rr'),
   );
@@ -112,9 +112,8 @@ function drush_registry_rebuild() {
     }
   }
 
-  // This section is not functionally important. It's just getting the
-  // registry_parsed_files() so that it can report the change.
-  // Note that it works with Drupal 7 only.
+  // This section is not functionally important. It's just using the
+  // registry_get_parsed_files() so that it can report the change. Drupal 7 only.
   if (drush_drupal_major_version() == 7) {
     $connection_info = Database::getConnectionInfo();
     $driver = $connection_info['default']['driver'];
@@ -122,15 +121,17 @@ function drush_registry_rebuild() {
     $parsed_before = registry_get_parsed_files();
   }
 
+  // Separate bootstrap cache exists only in Drupal 7 or newer.
+  // They are cleared later again via drupal_flush_all_caches().
   if (drush_drupal_major_version() == 7) {
     cache_clear_all('lookup_cache', 'cache_bootstrap');
     cache_clear_all('variables', 'cache_bootstrap');
     cache_clear_all('module_implements', 'cache_bootstrap');
-    drush_log(dt('Bootstrap caches have been cleared in the pre-DRUPAL_BOOTSTRAP_FULL phase.'));
+    drush_log(dt('Bootstrap caches have been cleared in DRUSH_BOOTSTRAP_DRUPAL_DATABASE.'));
   }
   elseif (drush_drupal_major_version() > 7) {
     cache('bootstrap')->deleteAll();
-    drush_log(dt('Bootstrap caches have been cleared in the pre-DRUPAL_BOOTSTRAP_FULL phase.'));
+    drush_log(dt('Bootstrap caches have been cleared in DRUSH_BOOTSTRAP_DRUPAL_DATABASE.'));
   }
 
   if (drush_drupal_major_version() == 7) {
@@ -142,8 +143,6 @@ function drush_registry_rebuild() {
   else {
     return drush_module_cache_rebuild(); // Drupal 5 and 6 compatible
   }
-
-  drush_log(dt('The registry has been rebuilt in the pre-DRUPAL_BOOTSTRAP_FULL phase.'), 'success');
 
   drush_log(dt('Bootstrapping to DRUPAL_BOOTSTRAP_FULL.'));
   drupal_bootstrap(DRUPAL_BOOTSTRAP_FULL);
@@ -180,6 +179,7 @@ function drush_registry_rebuild() {
     return drush_module_cache_rebuild(); // Drupal 5 and 6 compatible
   }
 
+  // Extra cleanup available for D7 only.
   if (drush_drupal_major_version() == 7) {
     $parsed_after = registry_get_parsed_files();
     // Remove files which don't exist anymore.
@@ -215,7 +215,8 @@ function drush_registry_rebuild() {
     drush_log(dt($message, $dt_args));
   }
 
-  drush_log(dt('The registry has been rebuilt in DRUPAL_BOOTSTRAP_FULL.'), 'success');
+  // Everything done.
+  drush_log(dt('All registry rebuilds have been completed.'), 'success');
 
   if (!drush_get_option('no-cache-clear')) {
     if (drush_drupal_major_version() <= 7) {
@@ -250,6 +251,7 @@ function drush_module_cache_rebuild() {
     drush_log(dt('All caches have been cleared with drush_drupal_cache_clear_all.'));
   }
   else {
-    drush_log(dt('The caches have not been cleared. It is recommended you clear the Drupal caches as soon as possible.'), 'warning');
+    drush_log(dt('The Drupal caches have NOT been cleared after all registry rebuilds.'), 'warning');
+    drush_log(dt('It is highly recommended you clear the Drupal caches as soon as possible.'), 'warning');
   }
 }
