@@ -5,6 +5,12 @@
  */
 
 /**
+ * Use variable to force cache clear, where required,
+ * even if no-cache-clear option is used. Defaults to false.
+ */
+$force_all_cache_clear = FALSE;
+
+/**
  * Implements hook_drush_help().
  */
 function registry_rebuild_drush_help($section) {
@@ -129,54 +135,52 @@ function drush_registry_rebuild() {
     cache_clear_all('module_implements', 'cache_bootstrap');
     drush_log(dt('Bootstrap caches have been cleared in DRUSH_BOOTSTRAP_DRUPAL_DATABASE.'));
   }
-  elseif (drush_drupal_major_version() > 7) {
+  elseif (drush_drupal_major_version() >= 8) {
     cache('bootstrap')->deleteAll();
     drush_log(dt('Bootstrap caches have been cleared in DRUSH_BOOTSTRAP_DRUPAL_DATABASE.'));
   }
 
-  if (drush_drupal_major_version() == 7) {
-    registry_rebuild();  // Drupal 7 compatible only
+  // We later run system_rebuild_module_data() on Drupal 7+ via D7-only,
+  // registry_rebuild() wrapper, which is run inside drupal_flush_all_caches().
+  // It is an equivalent of module_rebuild_cache() in D5-D6 and is normally run via
+  // our universal wrapper drush_registry_rebuild_cc_all() -- see further below.
+  // However, we are still on the DRUSH_BOOTSTRAP_DRUPAL_DATABASE level here,
+  // and we want to make the initial rebuild as atomic as possible, so we can't
+  // run everything from drush_registry_rebuild_cc_all() yet.
+  drush_log(dt('We are on the DRUSH_BOOTSTRAP_DRUPAL_DATABASE level still.'));
+  if (drush_drupal_major_version() >= 7) {
+    system_rebuild_module_data(); // D7+
+    drush_log(dt('The registry has been rebuilt via system_rebuild_module_data (A).'), 'success');
   }
-  elseif (drush_drupal_major_version() > 7) {
-    system_rebuild_module_data();  // Drupal 8 compatible
-  }
-  else {
-    return drush_module_cache_rebuild(); // Drupal 5 and 6 compatible
+  else { // D5-D6
+    module_list(TRUE, FALSE);
+    module_rebuild_cache();
+    drush_log(dt('The registry has been rebuilt via module_rebuild_cache (A).'), 'success');
   }
 
   drush_log(dt('Bootstrapping to DRUPAL_BOOTSTRAP_FULL.'));
   drupal_bootstrap(DRUPAL_BOOTSTRAP_FULL);
-  drush_log(dt('Doing registry_rebuild() in DRUPAL_BOOTSTRAP_FULL.'));
-
-  if (!drush_get_option('no-cache-clear')) {
-    if (drush_drupal_major_version() >= 7) {
-      db_truncate('cache')->execute();
-    }
-    else {
-      cache_clear_all('*', 'cache', TRUE);
-    }
-    drush_log(dt('The cache table truncated in DRUPAL_BOOTSTRAP_FULL.'));
-  }
+  // We can run our wrapper now, since we are in a full bootstrap already.
+  // Note that the wrapper normally honors the --no-cache-clear option if used.
+  drush_registry_rebuild_cc_all();
+  drush_log(dt('The registry has been rebuilt via drush_registry_rebuild_cc_all (B).'), 'success');
 
   if (drush_get_option('fire-bazooka') && drush_drupal_major_version() == 7) {
-    drupal_flush_all_caches();
-    drush_log(dt('All caches have been cleared with drupal_flush_all_caches.'));
-    db_truncate('cache_form')->execute();
-    drush_log(dt('The cache_form table truncated in DRUPAL_BOOTSTRAP_FULL.'));
+    $force_all_cache_clear = TRUE;
+    if (drush_get_option('no-cache-clear')) {
+      // Force all caches clear before rebuilding tables from scratch,
+      // but only if --no-cache-clear is used, since otherwise
+      // it already has been done above.
+      drush_registry_rebuild_cc_all();
+      drush_log(dt('Forced pre-fire-bazooka extra all caches clear.'));
+    }
     db_truncate('registry')->execute();
-    drush_log(dt('The registry table truncated in DRUPAL_BOOTSTRAP_FULL.'));
     db_truncate('registry_file')->execute();
-    drush_log(dt('The registry_file table truncated in DRUPAL_BOOTSTRAP_FULL.'));
-  }
-
-  if (drush_drupal_major_version() == 7) {
-    registry_rebuild();  // Drupal 7 compatible only
-  }
-  elseif (drush_drupal_major_version() > 7) {
-    system_rebuild_module_data();  // Drupal 8 compatible
-  }
-  else {
-    return drush_module_cache_rebuild(); // Drupal 5 and 6 compatible
+    drush_log(dt('The registry_file and registry tables truncated with --fire-bazooka.'));
+    // We have to force API-based rebuild integrated with cache clears
+    // directly after truncating registry tables.
+    drush_registry_rebuild_cc_all();
+    drush_log(dt('The registry has been rebuilt via drush_registry_rebuild_cc_all (C).'), 'success');
   }
 
   // Extra cleanup available for D7 only.
@@ -213,42 +217,52 @@ function drush_registry_rebuild() {
       '@parsed_after'  => count($parsed_after),
     );
     drush_log(dt($message, $dt_args));
+    drush_registry_rebuild_cc_all();
   }
 
   // Everything done.
   drush_log(dt('All registry rebuilds have been completed.'), 'success');
 
-  if (!drush_get_option('no-cache-clear')) {
-    if (drush_drupal_major_version() <= 7) {
-      drush_drupal_cache_clear_all();
+/**
+ * Registry Rebuild needs to aggressively clear all caches,
+ * not just some bins (at least to attempt it) also *before*
+ * attempting to rebuild registry, or it may not be able
+ * to fix the problem at all, if it relies on some cached
+ * and no longer valid data/paths etc. This problem has been
+ * confirmed and reproduced many times with option --fire-bazooka
+ * which is available only in the Drush variant, but it confirms
+ * the importance of starting with real, raw and not cached
+ * in any way site state. While the --no-cache-clear option
+ * still disables this procedure, --fire-bazooka takes precedence
+ * and forces all caches clear action. All caches are cleared
+ * by default in the PHP script variant.
+ */
+function drush_registry_rebuild_cc_all() {
+  if (!drush_get_option('no-cache-clear') || $force_all_cache_clear) {
+    if (function_exists('cache_clear_all') || drush_drupal_major_version() < 8) {
+      cache_clear_all('*', 'cache', TRUE);
       cache_clear_all('*', 'cache_form', TRUE);
-      drush_log(dt('All caches have been cleared with drush_drupal_cache_clear_all.'));
     }
     else {
-      drupal_flush_all_caches();
-      db_truncate('cache_form')->execute();
-      drush_log(dt('All caches have been cleared with drupal_flush_all_caches.'));
+      cache('cache')->deleteAll();
+      cache('cache_form')->deleteAll();
     }
-  }
-  else {
-    drush_log(dt('The caches have not been cleared. It is recommended you clear the Drupal caches as soon as possible.'), 'warning');
-  }
-}
 
-/**
- * Rebuild for D6 (which really just means rebuilding the menu/system table).
- */
-function drush_module_cache_rebuild() {
-  drush_log(dt('module_rebuild_cache() in DRUSH_BOOTSTRAP_DRUPAL_DATABASE.'));
-  module_list(TRUE, FALSE);
-  module_rebuild_cache();
-  drush_log(dt('Module cache has been rebuilt.'));
-  drush_log(dt('Bootstrapping to DRUPAL_BOOTSTRAP_FULL.'));
-  drupal_bootstrap(DRUPAL_BOOTSTRAP_FULL);
-  if (!drush_get_option('no-cache-clear')) {
-    drush_drupal_cache_clear_all();
-    cache_clear_all('*', 'cache_form', TRUE);
-    drush_log(dt('All caches have been cleared with drush_drupal_cache_clear_all.'));
+    if (function_exists('module_rebuild_cache') || (drush_drupal_major_version() >= 5 && drush_drupal_major_version() < 7)) { // D5-D6
+      module_list(TRUE, FALSE);
+      module_rebuild_cache();
+    }
+
+    if (function_exists('drupal_flush_all_caches') || drush_drupal_major_version() >= 6) { // D6+
+      drupal_flush_all_caches();
+    }
+    else { // D5
+      cache_clear_all();
+      system_theme_data();
+      node_types_rebuild();
+      menu_rebuild();
+    }
+    drush_log(dt('All caches have been cleared with drush_registry_rebuild_cc_all.'), 'success');
   }
   else {
     drush_log(dt('The Drupal caches have NOT been cleared after all registry rebuilds.'), 'warning');

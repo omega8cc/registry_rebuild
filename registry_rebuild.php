@@ -130,38 +130,31 @@ function registry_rebuild_rebuild() {
     print "Bootstrap caches have been cleared in DRUPAL_BOOTSTRAP_SESSION<br/>\n";
   }
 
-  if (function_exists('registry_rebuild')) {
-    print "Doing registry_rebuild() in DRUPAL_BOOTSTRAP_SESSION<br/>\n";
-    registry_rebuild();  // Drupal 7 compatible only
-  }
-  elseif (function_exists('module_rebuild_cache')) {
-    print "Doing module_rebuild_cache() in DRUPAL_BOOTSTRAP_SESSION<br/>\n";
-    module_rebuild_cache();  // Drupal 5 and 6 compatible only
-  }
-  else {
+  // We later run system_rebuild_module_data() on Drupal 7+ via D7-only,
+  // registry_rebuild() wrapper, which is run inside drupal_flush_all_caches().
+  // It is an equivalent of module_rebuild_cache() in D5-D6 and is normally run via
+  // our universal wrapper registry_rebuild_cc_all() -- see further below.
+  // However, we are still on the DRUPAL_BOOTSTRAP_SESSION level here,
+  // and we want to make the initial rebuild as atomic as possible, so we can't
+  // run everything from registry_rebuild_cc_all() yet.
+  if (function_exists('system_rebuild_module_data')) { // D7+
     print "Doing system_rebuild_module_data() in DRUPAL_BOOTSTRAP_SESSION<br/>\n";
-    system_rebuild_module_data();  // Drupal 8 compatible
+    system_rebuild_module_data();
+  }
+  else { // D5-D6
+    print "Doing module_rebuild_cache() in DRUPAL_BOOTSTRAP_SESSION<br/>\n";
+    module_list(TRUE, FALSE);
+    module_rebuild_cache();
   }
 
   print "Bootstrapping to DRUPAL_BOOTSTRAP_FULL<br/>\n";
   drupal_bootstrap(DRUPAL_BOOTSTRAP_FULL);
-  db_truncate('cache');
+  // We can run our wrapper now, since we are in a full bootstrap already.
+  print "Rebuilding registry via registry_rebuild_cc_all in DRUPAL_BOOTSTRAP_FULL<br/>\n";
+  registry_rebuild_cc_all();
 
   // Extra cleanup available for D7 only.
   if (function_exists('registry_rebuild')) {
-    print "Doing registry_rebuild() in DRUPAL_BOOTSTRAP_FULL<br/>\n";
-    registry_rebuild();  // Drupal 7 compatible only
-  }
-  elseif (function_exists('module_rebuild_cache')) {
-    print "Doing module_rebuild_cache() in DRUPAL_BOOTSTRAP_FULL<br/>\n";
-    module_rebuild_cache();  // Drupal 5 and 6 compatible only
-  }
-  else {
-    print "Doing system_rebuild_module_data() in DRUPAL_BOOTSTRAP_FULL<br/>\n";
-    system_rebuild_module_data();  // Drupal 8 compatible
-  }
-
-  if (function_exists('registry_rebuild')) { // Drupal 7 compatible only
     $parsed_after = registry_get_parsed_files();
     // Remove files which don't exist anymore.
     $filenames = array();
@@ -180,14 +173,49 @@ function registry_rebuild_rebuild() {
       print("Deleted " . count($filenames) . ' stale files from registry manually.');
     }
     $parsed_after = registry_get_parsed_files();
-    print "Flushing all caches<br/>\n";
-    drupal_flush_all_caches();
     print "There were " . count($parsed_before) . " files in the registry before and " . count($parsed_after) . " files now.<br/>\n";
-    print "If you don't see any crazy fatal errors, your registry has been rebuilt.<br/>\n";
+    registry_rebuild_cc_all();
+  }
+  print "If you don't see any crazy fatal errors, your registry has been rebuilt.<br/>\n";
+}
+
+/**
+ * Registry Rebuild needs to aggressively clear all caches,
+ * not just some bins (at least to attempt it) also *before*
+ * attempting to rebuild registry, or it may not be able
+ * to fix the problem at all, if it relies on some cached
+ * and no longer valid data/paths etc. This problem has been
+ * confirmed and reproduced many times with option --fire-bazooka
+ * which is available only in the Drush variant, but it confirms
+ * the importance of starting with real, raw and not cached
+ * in any way site state. While the --no-cache-clear option
+ * still disables this procedure, --fire-bazooka takes precedence
+ * and forces all caches clear action. All caches are cleared
+ * by default in the PHP script variant.
+ */
+function registry_rebuild_cc_all() {
+  if (function_exists('cache_clear_all')) {
+    cache_clear_all('*', 'cache', TRUE);
+    cache_clear_all('*', 'cache_form', TRUE);
   }
   else {
-    print "Flushing all caches<br/>\n";
-    drupal_flush_all_caches();
-    print "If you don't see any crazy fatal errors, your registry has been rebuilt.<br/>\n";
+    cache('cache')->deleteAll();
+    cache('cache_form')->deleteAll();
   }
+
+  if (function_exists('module_rebuild_cache')) { // D5-D6
+    module_list(TRUE, FALSE);
+    module_rebuild_cache();
+  }
+
+  if (function_exists('drupal_flush_all_caches')) { // D6+
+    drupal_flush_all_caches();
+  }
+  else { // D5
+    cache_clear_all();
+    system_theme_data();
+    node_types_rebuild();
+    menu_rebuild();
+  }
+  print "All caches have been cleared with registry_rebuild_cc_all.<br/>\n";
 }
