@@ -222,6 +222,7 @@ function drush_registry_rebuild() {
 
   // Everything done.
   drush_log(dt('All registry rebuilds have been completed.'), 'success');
+}
 
 /**
  * Registry Rebuild needs to aggressively clear all caches,
