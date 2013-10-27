@@ -266,6 +266,15 @@ function drush_registry_rebuild_cc_all() {
     drush_log(dt('All caches have been cleared with drush_registry_rebuild_cc_all.'), 'success');
   }
   else {
+    if (drush_drupal_major_version() >= 7) {
+      system_rebuild_module_data(); // D7+
+      drush_log(dt('The registry has been rebuilt via system_rebuild_module_data (no-cache-clear).'), 'success');
+    }
+    else { // D5-D6
+      module_list(TRUE, FALSE);
+      module_rebuild_cache();
+      drush_log(dt('The registry has been rebuilt via module_rebuild_cache (no-cache-clear).'), 'success');
+    }
     drush_log(dt('The Drupal caches have NOT been cleared after all registry rebuilds.'), 'warning');
     drush_log(dt('It is highly recommended you clear the Drupal caches as soon as possible.'), 'warning');
   }
