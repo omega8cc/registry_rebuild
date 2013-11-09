@@ -118,6 +118,14 @@ function drush_registry_rebuild() {
     }
   }
 
+  // We may need to clear also Drush 5+ internal cache first.
+  if (function_exists('drush_major_version')) {
+    if (drush_major_version() > 4) {
+      drush_cache_clear_drush();
+      drush_log(dt('Internal Drush cache cleared with drush_cache_clear_drush (1).'));
+    }
+  }
+
   // This section is not functionally important. It's just using the
   // registry_get_parsed_files() so that it can report the change. Drupal 7 only.
   if (drush_drupal_major_version() == 7) {
@@ -156,6 +164,14 @@ function drush_registry_rebuild() {
     module_list(TRUE, FALSE);
     module_rebuild_cache();
     drush_log(dt('The registry has been rebuilt via module_rebuild_cache (A).'), 'success');
+  }
+
+  // We may need to clear also Drush 5+ internal cache at this point again.
+  if (function_exists('drush_major_version')) {
+    if (drush_major_version() > 4) {
+      drush_cache_clear_drush();
+      drush_log(dt('Internal Drush cache cleared with drush_cache_clear_drush (2).'));
+    }
   }
 
   drush_log(dt('Bootstrapping to DRUPAL_BOOTSTRAP_FULL.'));
