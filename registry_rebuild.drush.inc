@@ -119,11 +119,10 @@ function drush_registry_rebuild() {
   }
 
   // We may need to clear also Drush 5+ internal cache first.
-  if (function_exists('drush_major_version')) {
-    if (drush_major_version() > 4) {
-      drush_cache_clear_drush();
-      drush_log(dt('Internal Drush cache cleared with drush_cache_clear_drush (1).'));
-    }
+  drush_log(dt("This DRUSH_MAJOR_VERSION is: %ver", array('%ver' => DRUSH_MAJOR_VERSION)));
+  if (DRUSH_MAJOR_VERSION > 4) {
+    drush_cache_clear_drush();
+    drush_log(dt('Internal Drush cache cleared with drush_cache_clear_drush (1).'));
   }
 
   // This section is not functionally important. It's just using the
@@ -167,11 +166,9 @@ function drush_registry_rebuild() {
   }
 
   // We may need to clear also Drush 5+ internal cache at this point again.
-  if (function_exists('drush_major_version')) {
-    if (drush_major_version() > 4) {
-      drush_cache_clear_drush();
-      drush_log(dt('Internal Drush cache cleared with drush_cache_clear_drush (2).'));
-    }
+  if (DRUSH_MAJOR_VERSION > 4) {
+    drush_cache_clear_drush();
+    drush_log(dt('Internal Drush cache cleared with drush_cache_clear_drush (1).'));
   }
 
   drush_log(dt('Bootstrapping to DRUPAL_BOOTSTRAP_FULL.'));
