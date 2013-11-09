@@ -168,7 +168,7 @@ function drush_registry_rebuild() {
   // We may need to clear also Drush 5+ internal cache at this point again.
   if (DRUSH_MAJOR_VERSION > 4) {
     drush_cache_clear_drush();
-    drush_log(dt('Internal Drush cache cleared with drush_cache_clear_drush (1).'));
+    drush_log(dt('Internal Drush cache cleared with drush_cache_clear_drush (2).'));
   }
 
   drush_log(dt('Bootstrapping to DRUPAL_BOOTSTRAP_FULL.'));
