@@ -130,14 +130,19 @@ function registry_rebuild_rebuild() {
     print "Bootstrap caches have been cleared in DRUPAL_BOOTSTRAP_SESSION<br/>\n";
   }
 
-  // We later run system_rebuild_module_data() on Drupal 7+ via D7-only,
-  // registry_rebuild() wrapper, which is run inside drupal_flush_all_caches().
+  // We later run system_rebuild_module_data() and registry_update() on Drupal 7 via
+  // D7-only registry_rebuild() wrapper, which is run inside drupal_flush_all_caches().
   // It is an equivalent of module_rebuild_cache() in D5-D6 and is normally run via
   // our universal wrapper registry_rebuild_cc_all() -- see further below.
   // However, we are still on the DRUPAL_BOOTSTRAP_SESSION level here,
   // and we want to make the initial rebuild as atomic as possible, so we can't
-  // run everything from registry_rebuild_cc_all() yet.
-  if (function_exists('system_rebuild_module_data')) { // D7+
+  // run everything from registry_rebuild_cc_all() yet, so we run an absolute
+  // minimum we can at this stage, core specific.
+  if (function_exists('registry_rebuild')) { // D7 only
+    print "Doing registry_rebuild() in DRUPAL_BOOTSTRAP_SESSION<br/>\n";
+    registry_rebuild();
+  }
+  elseif (!function_exists('registry_rebuild') && function_exists('system_rebuild_module_data')) { // D8+
     print "Doing system_rebuild_module_data() in DRUPAL_BOOTSTRAP_SESSION<br/>\n";
     system_rebuild_module_data();
   }

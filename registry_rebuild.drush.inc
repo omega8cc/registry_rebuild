@@ -147,13 +147,14 @@ function drush_registry_rebuild() {
     drush_log(dt('Bootstrap caches have been cleared in DRUSH_BOOTSTRAP_DRUPAL_DATABASE.'));
   }
 
-  // We later run system_rebuild_module_data() on Drupal 7+ via D7-only,
-  // registry_rebuild() wrapper, which is run inside drupal_flush_all_caches().
+  // We later run system_rebuild_module_data() and registry_update() on Drupal 7 via
+  // D7-only registry_rebuild() wrapper, which is run inside drupal_flush_all_caches().
   // It is an equivalent of module_rebuild_cache() in D5-D6 and is normally run via
-  // our universal wrapper drush_registry_rebuild_cc_all() -- see further below.
-  // However, we are still on the DRUSH_BOOTSTRAP_DRUPAL_DATABASE level here,
+  // our universal wrapper registry_rebuild_cc_all() -- see further below.
+  // However, we are still on the DRUPAL_BOOTSTRAP_SESSION level here,
   // and we want to make the initial rebuild as atomic as possible, so we can't
-  // run everything from drush_registry_rebuild_cc_all() yet.
+  // run everything from registry_rebuild_cc_all() yet, so we run an absolute
+  // minimum we can at this stage, core specific.
   drush_log(dt('We are on the DRUSH_BOOTSTRAP_DRUPAL_DATABASE level still.'));
   if (drush_drupal_major_version() == 7) {
     registry_rebuild(); // D7 only
