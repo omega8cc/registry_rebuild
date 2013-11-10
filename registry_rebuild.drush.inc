@@ -90,11 +90,11 @@ function drush_registry_rebuild() {
       // is accessible. Otherwise we use the core lock.inc as fallback.
       if (is_readable($cache_lock_path_relative) && is_file($cache_lock_path_relative)) {
         $includes[] = $cache_lock_path_relative;
-        drush_log(dt("We will use relative variant of lock.inc: %lock", array('%lock' => $cache_lock_path_relative)));
+        drush_log(dt("We will use relative variant of lock.inc: @lock", array('@lock' => $cache_lock_path_relative)));
       }
       elseif (is_readable($cache_lock_path_absolute) && is_file($cache_lock_path_absolute)) {
         $includes[] = $cache_lock_path_absolute;
-        drush_log(dt("We will use absolute variant of lock.inc: %lock", array('%lock' => $cache_lock_path_absolute)));
+        drush_log(dt("We will use absolute variant of lock.inc: @lock", array('@lock' => $cache_lock_path_absolute)));
       }
       else {
         drush_log(dt('We will use core implementation of lock.inc as fallback.'));
@@ -119,7 +119,7 @@ function drush_registry_rebuild() {
   }
 
   // We may need to clear also Drush 5+ internal cache first.
-  drush_log(dt("This DRUSH_MAJOR_VERSION is: %ver", array('%ver' => DRUSH_MAJOR_VERSION)));
+  drush_log(dt("This DRUSH_MAJOR_VERSION is: @ver", array('@ver' => DRUSH_MAJOR_VERSION)));
   if (DRUSH_MAJOR_VERSION > 4) {
     drush_cache_clear_drush();
     drush_log(dt('Internal Drush cache cleared with drush_cache_clear_drush (1).'));
