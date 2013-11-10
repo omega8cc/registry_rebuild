@@ -155,8 +155,12 @@ function drush_registry_rebuild() {
   // and we want to make the initial rebuild as atomic as possible, so we can't
   // run everything from drush_registry_rebuild_cc_all() yet.
   drush_log(dt('We are on the DRUSH_BOOTSTRAP_DRUPAL_DATABASE level still.'));
-  if (drush_drupal_major_version() >= 7) {
-    system_rebuild_module_data(); // D7+
+  if (drush_drupal_major_version() == 7) {
+    registry_rebuild(); // D7 only
+    drush_log(dt('The registry has been rebuilt via registry_rebuild (A).'), 'success');
+  }
+  elseif (drush_drupal_major_version() > 7) {
+    system_rebuild_module_data(); // D8+
     drush_log(dt('The registry has been rebuilt via system_rebuild_module_data (A).'), 'success');
   }
   else { // D5-D6
@@ -279,8 +283,12 @@ function drush_registry_rebuild_cc_all() {
     drush_log(dt('All caches have been cleared with drush_registry_rebuild_cc_all.'), 'success');
   }
   else {
-    if (drush_drupal_major_version() >= 7) {
-      system_rebuild_module_data(); // D7+
+    if (drush_drupal_major_version() == 7) {
+      registry_rebuild(); // D7 only
+      drush_log(dt('The registry has been rebuilt via registry_rebuild (no-cache-clear).'), 'success');
+    }
+    elseif (drush_drupal_major_version() > 7) {
+      system_rebuild_module_data(); // D8+
       drush_log(dt('The registry has been rebuilt via system_rebuild_module_data (no-cache-clear).'), 'success');
     }
     else { // D5-D6
