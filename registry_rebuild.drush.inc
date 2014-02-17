@@ -177,7 +177,7 @@ function drush_registry_rebuild() {
   }
 
   drush_log(dt('Bootstrapping to DRUPAL_BOOTSTRAP_FULL.'));
-  drupal_bootstrap(DRUPAL_BOOTSTRAP_FULL);
+  drush_bootstrap_to_phase(DRUSH_BOOTSTRAP_DRUPAL_FULL);
   // We can run our wrapper now, since we are in a full bootstrap already.
   // Note that the wrapper normally honors the --no-cache-clear option if used.
   drush_registry_rebuild_cc_all();
