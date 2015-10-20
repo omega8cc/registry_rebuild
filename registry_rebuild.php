@@ -24,8 +24,9 @@ if (file_exists(DRUPAL_ROOT . '/core/includes/bootstrap.inc')) {
   $module_dir = DRUPAL_ROOT . '/core/modules';
 }
 
+require_once($include_dir . '/bootstrap.inc');
+
 $includes = array(
-  $include_dir . '/bootstrap.inc',
   $include_dir . '/common.inc',
   $include_dir . '/database.inc',
   $include_dir . '/schema.inc',
