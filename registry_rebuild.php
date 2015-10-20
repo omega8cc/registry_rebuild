@@ -200,6 +200,7 @@ function registry_rebuild_rebuild() {
  * by default in the PHP script variant.
  */
 function registry_rebuild_cc_all() {
+  module_invoke_all('pre_flush_all_caches');
   if (function_exists('cache_clear_all')) {
     cache_clear_all('*', 'cache', TRUE);
     cache_clear_all('*', 'cache_form', TRUE);
@@ -208,6 +209,8 @@ function registry_rebuild_cc_all() {
     cache('cache')->deleteAll();
     cache('cache_form')->deleteAll();
   }
+
+  module_invoke_all('pre_flush_all_caches');
 
   if (function_exists('module_rebuild_cache')) { // D5-D6
     module_list(TRUE, FALSE);

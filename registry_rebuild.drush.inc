@@ -257,6 +257,7 @@ function drush_registry_rebuild() {
  * by default in the PHP script variant.
  */
 function drush_registry_rebuild_cc_all() {
+  module_invoke_all('pre_flush_all_caches');
   if (!drush_get_option('no-cache-clear') || $force_all_cache_clear) {
     if (function_exists('cache_clear_all') || drush_drupal_major_version() < 8) {
       cache_clear_all('*', 'cache', TRUE);
