@@ -71,6 +71,7 @@ function drush_registry_rebuild() {
     $include_dir . '/actions.inc',
     $include_dir . '/entity.inc',
     $module_dir  . '/system/system.module',
+    $include_dir . '/database/database.inc',
     $include_dir . '/database/query.inc',
     $include_dir . '/database/select.inc',
     $include_dir . '/registry.inc',
