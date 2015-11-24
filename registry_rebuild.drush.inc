@@ -79,6 +79,7 @@ function drush_registry_rebuild() {
     $include_dir . '/menu.inc',
     $include_dir . '/file.inc',
     $include_dir . '/theme.inc',
+    $include_dir . '/unicode.inc',
   );
 
   if (drush_drupal_major_version() == 7) {
@@ -160,6 +161,9 @@ function drush_registry_rebuild() {
   if (drush_drupal_major_version() == 7) {
     registry_rebuild(); // D7 only
     drush_log(dt('The registry has been rebuilt via registry_rebuild (A).'), 'success');
+    bootstrap_invoke_all('registry_rebuild');
+    registry_rebuild();
+    drush_log(dt('The registry has been rebuilt via registry_rebuild (A2).'), 'success');
   }
   elseif (drush_drupal_major_version() > 7) {
     system_rebuild_module_data(); // D8+
