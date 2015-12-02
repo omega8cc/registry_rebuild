@@ -91,6 +91,11 @@ registry_rebuild_rebuild();
  * If unable to discover it, fail and exit.
  */
 function define_drupal_root() {
+  $args = getopt(NULL, array('root::'));
+  if (!empty($args['root'])) {
+    return $args['root'];
+  }
+
   // This is the smallest number of directories to go up: from /sites/all/modules/registry_rebuild.
   $parent_count = 4;
   // 8 seems reasonably far to go looking up.
