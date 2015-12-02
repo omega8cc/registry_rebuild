@@ -81,6 +81,15 @@ foreach ($includes as $include) {
   }
 }
 
+if (!function_exists('module_list')) {
+  print "ERROR! Registry Rebuild requires a working Drupal site to operate on.<br/>\n";
+  print "Please run this script from the correct Drupal site directory,<br/>\n";
+  print "or specify Drupal root path on command line, for example:<br/>\n";
+  print "php registry_rebuild.php --root=/path/to/drupal/root<br/>\n";
+  print "BYE!<br/>\n";
+  exit;
+}
+
 print "Bootstrapping to DRUPAL_BOOTSTRAP_SESSION<br/>\n";
 drupal_bootstrap(DRUPAL_BOOTSTRAP_SESSION);
 

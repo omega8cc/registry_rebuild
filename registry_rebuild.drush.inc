@@ -127,6 +127,15 @@ function drush_registry_rebuild() {
     drush_log(dt('Internal Drush cache cleared with drush_cache_clear_drush (1).'));
   }
 
+  if (!function_exists('module_list')) {
+    drush_log(dt('ERROR! Registry Rebuild requires a working Drupal site to operate on.'), 'warning');
+    drush_log(dt('Please either cd to a directory containing a Drupal settings.php file,'), 'warning');
+    drush_log(dt('or use a working site @alias outside of Drupal root directory tree.'), 'warning');
+    drush_log(dt('Example for forced mode: drush @sitename rr --fire-bazooka'), 'warning');
+    drush_log(dt('BYE!'), 'warning');
+    exit;
+  }
+
   // This section is not functionally important. It's just using the
   // registry_get_parsed_files() so that it can report the change. Drupal 7 only.
   if (drush_drupal_major_version() == 7) {
