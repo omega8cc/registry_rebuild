@@ -312,7 +312,7 @@ function drush_registry_rebuild_cc_all() {
       module_rebuild_cache();
       drush_log(dt('The registry has been rebuilt via module_rebuild_cache (no-cache-clear).'), 'success');
     }
-    drush_log(dt('The Drupal caches have NOT been cleared after all registry rebuilds.'), 'warning');
-    drush_log(dt('It is highly recommended you clear the Drupal caches as soon as possible.'), 'warning');
+    drush_log(dt('The Drupal caches have NOT been cleared after all registry rebuilds.'), 'info');
+    drush_log(dt('It is highly recommended you clear the Drupal caches as soon as possible.'), 'info');
   }
 }
